@@ -1,0 +1,46 @@
+.app-shell { display: flex; min-height: 100vh; }
+.main { flex: 1; min-width: 0; }
+
+.sidebar { width: 248px; flex: none; background: var(--surface-warm); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px 16px; position: sticky; top: 0; height: 100vh; overflow: visible; z-index: 20; }
+.sidebar .brand { display: flex; align-items: center; gap: 8px; padding: 8px 8px 20px; font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+.sidebar .brand .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.sidebar nav { display: flex; flex-direction: column; gap: 2px; }
+.sidebar nav a { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-sm); color: var(--fg-2); font-size: 14px; font-weight: 500; transition: background var(--motion-fast) var(--ease-standard), color var(--motion-fast) var(--ease-standard); }
+.sidebar nav a svg { width: 18px; height: 18px; flex: none; }
+.sidebar nav a:hover { background: var(--border-soft); }
+.sidebar nav a.active { background: var(--accent-soft); color: var(--accent); }
+
+.sidebar .user-card { margin-top: auto; position: relative; display: flex; align-items: center; gap: 10px; padding: 10px; border-top: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; }
+.sidebar .user-card:hover, .sidebar .user-card.on-page { background: var(--border-soft); }
+.avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--fg); color: var(--bg); display: grid; place-items: center; font-size: 13px; font-weight: 600; flex: none; }
+.user-card .who { min-width: 0; }
+.user-card .who .name { font-size: 13px; font-weight: 600; }
+.user-card .who .email { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-flyout {
+  position: absolute; left: calc(100% + 8px); bottom: 0;
+  background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md);
+  box-shadow: var(--elev-raised); padding: 6px; min-width: 208px;
+  opacity: 0; visibility: hidden; transform: translateX(-6px);
+  transition: opacity var(--motion-fast) var(--ease-standard), transform var(--motion-fast) var(--ease-standard), visibility var(--motion-fast);
+  z-index: 30;
+}
+.user-card:hover .user-flyout, .user-card:focus-within .user-flyout { opacity: 1; visibility: visible; transform: translateX(0); }
+.uf-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-sm); font-size: 13.5px; color: var(--fg-2); }
+.uf-item:hover { background: var(--surface); color: var(--fg); }
+.uf-item.current { color: var(--accent); font-weight: 600; }
+.uf-item svg { width: 16px; height: 16px; color: var(--muted); flex: none; }
+
+@media (max-width: 880px) {
+  .app-shell { flex-direction: column; }
+  .sidebar { width: 100%; height: auto; position: static; flex-direction: row; align-items: center; padding: 10px 14px; overflow-x: auto; }
+  .sidebar .brand { padding: 0 14px 0 0; }
+  .sidebar nav { flex-direction: row; gap: 4px; }
+  .sidebar nav a { white-space: nowrap; }
+  .sidebar .user-card { display: none; }
+}
+
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--fg); color: var(--bg); padding: 12px 20px; border-radius: var(--radius-pill); font-size: 13px; opacity: 0; pointer-events: none; transition: all var(--motion-base) var(--ease-standard); z-index: 60; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.crumb { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.crumb:hover { color: var(--fg); }
