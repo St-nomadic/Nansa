@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar.jsx';
 import Crumb from '../components/Crumb.jsx';
 import { IconCheck, IconChevronDown } from '../components/icons.jsx';
@@ -7,9 +7,30 @@ import './JobDetail.css';
 
 const CHECK = <IconCheck />;
 
+const DOC_TYPES = [
+  { key: 'resume', title: '이력서 생성', desc: '경력·프로젝트를 이 공고 요건에 맞춰 재구성해요.', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M6 3h9l5 5v13H6z"/><path d="M14 3v5h5M9 12h6M9 16h6"/></svg> },
+  { key: 'cover-letter', title: '자기소개서 생성', desc: '매칭 근거가 담긴 문항별 답변 초안을 만들어요.', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h4"/></svg> },
+  { key: 'portfolio', title: '포트폴리오 생성', desc: '관련 프로젝트를 골라 요약 페이지를 구성해요.', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 4v5"/></svg> },
+];
+
 export default function JobDetail() {
+  const navigate = useNavigate();
   const [accordionOpen, setAccordionOpen] = useState(false);
   const [reqTab, setReqTab] = useState('duty');
+  const [selectedDocTypes, setSelectedDocTypes] = useState(new Set());
+
+  function toggleDocType(key) {
+    setSelectedDocTypes(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  }
+
+  function goGenerate() {
+    if (selectedDocTypes.size === 0) return;
+    navigate(`/generate?types=${[...selectedDocTypes].join(',')}`);
+  }
 
   return (
     <div className="app-shell">
@@ -116,25 +137,18 @@ export default function JobDetail() {
           <section style={{ marginBottom: 32 }}>
             <h2 style={{ fontSize: 18, marginBottom: 14 }}>이 공고에 맞는 서류 만들기</h2>
             <div className="cta-grid">
-              <Link className="cta-card" to="/generate?type=resume">
-                <div className="cta-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M6 3h9l5 5v13H6z"/><path d="M14 3v5h5M9 12h6M9 16h6"/></svg></div>
-                <h3>이력서 생성</h3>
-                <p>경력·프로젝트를 이 공고 요건에 맞춰 재구성해요.</p>
-                <span className="btn btn-secondary btn-block">만들기</span>
-              </Link>
-              <Link className="cta-card" to="/generate?type=cover-letter">
-                <div className="cta-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h4"/></svg></div>
-                <h3>자기소개서 생성</h3>
-                <p>매칭 근거가 담긴 문항별 답변 초안을 만들어요.</p>
-                <span className="btn btn-secondary btn-block">만들기</span>
-              </Link>
-              <Link className="cta-card" to="/generate?type=portfolio">
-                <div className="cta-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 4v5"/></svg></div>
-                <h3>포트폴리오 생성</h3>
-                <p>관련 프로젝트를 골라 요약 페이지를 구성해요.</p>
-                <span className="btn btn-secondary btn-block">만들기</span>
-              </Link>
+              {DOC_TYPES.map(t => (
+                <div key={t.key} className={`cta-card${selectedDocTypes.has(t.key) ? ' selected' : ''}`} onClick={() => toggleDocType(t.key)}>
+                  <div className="cta-check">{selectedDocTypes.has(t.key) && <IconCheck />}</div>
+                  <div className="cta-mark">{t.icon}</div>
+                  <h3>{t.title}</h3>
+                  <p>{t.desc}</p>
+                </div>
+              ))}
             </div>
+            <button className="btn btn-primary" style={{ marginTop: 14 }} disabled={selectedDocTypes.size === 0} onClick={goGenerate}>
+              선택한 서류 생성하기{selectedDocTypes.size > 0 ? ` (${selectedDocTypes.size})` : ''}
+            </button>
           </section>
 
           <section style={{ marginBottom: 40 }}>

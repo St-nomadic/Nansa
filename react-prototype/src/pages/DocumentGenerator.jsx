@@ -12,7 +12,7 @@ const TYPES = [
 
 const STEPS = [
   { n: 1, label: '서류 유형' },
-  { n: 2, label: '생성 범위' },
+  { n: 2, label: '섹션 선택' },
   { n: 3, label: '생성 설정' },
   { n: 4, label: '생성 결과' },
 ];
@@ -21,9 +21,12 @@ const GEN_STEPS = ['JD 요건 분석 반영', '경력 데이터 매칭', '문장
 
 export default function DocumentGenerator() {
   const [params] = useSearchParams();
-  const [step, setStep] = useState(1);
-  const [selectedType, setSelectedType] = useState(params.get('type') || 'resume');
-  const [scope, setScope] = useState('full');
+  const [step, setStep] = useState(() => (params.get('types') ? 2 : 1));
+  const [selectedTypes, setSelectedTypes] = useState(() => {
+    const types = params.get('types');
+    if (types) return new Set(types.split(',').filter(Boolean));
+    return new Set([params.get('type') || 'resume']);
+  });
   const [sectionChecks, setSectionChecks] = useState({ basic: true, summary: true, project: false, skills: false });
   const [tone, setTone] = useState('표준');
   const [length, setLength] = useState('보통');
@@ -45,6 +48,18 @@ export default function DocumentGenerator() {
     }, 650);
     return () => clearInterval(id);
   }, [step]);
+
+  function toggleType(key) {
+    setSelectedTypes(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        if (next.size > 1) next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }
 
   function toggleTag(name) {
     setHighlighted(prev => {
@@ -84,7 +99,7 @@ export default function DocumentGenerator() {
             <p style={{ color: 'var(--muted)', fontSize: 14, marginBottom: 20 }}>여러 개를 선택해 순차로 생성할 수 있어요.</p>
             <div className="type-grid">
               {TYPES.map(t => (
-                <div key={t.key} className={`type-card${selectedType === t.key ? ' selected' : ''}`} onClick={() => setSelectedType(t.key)}>
+                <div key={t.key} className={`type-card${selectedTypes.has(t.key) ? ' selected' : ''}`} onClick={() => toggleType(t.key)}>
                   <div className="type-mark">{t.icon}</div>
                   <h3>{t.title}</h3>
                   <p>{t.desc}</p>
@@ -95,26 +110,16 @@ export default function DocumentGenerator() {
 
           {/* Step 2 */}
           <section className={`panel${step === 2 ? ' active' : ''}`}>
-            <h2 style={{ fontSize: 20, marginBottom: 20 }}>생성 범위를 선택하세요</h2>
-            <label className={`radio-card${scope === 'full' ? ' selected' : ''}`} onClick={() => setScope('full')}>
-              <input type="radio" name="scope" checked={scope === 'full'} readOnly />
-              <div><div className="rc-title">전체 생성</div><div className="rc-sub">이력서 전체를 처음부터 새로 구성해요.</div></div>
-            </label>
-            <label className={`radio-card${scope === 'section' ? ' selected' : ''}`} onClick={() => setScope('section')}>
-              <input type="radio" name="scope" checked={scope === 'section'} readOnly />
-              <div>
-                <div className="rc-title">섹션 단위 생성</div>
-                <div className="rc-sub">선택한 섹션만 이 공고에 맞춰 다시 써요.</div>
-                <div className="section-checks" onClick={e => e.stopPropagation()}>
-                  {Object.entries({ basic: '기본 정보', summary: '경력 요약', project: '프로젝트', skills: '스킬' }).map(([key, label]) => (
-                    <label className="chip-check" key={key}>
-                      <input type="checkbox" checked={sectionChecks[key]} onChange={() => setSectionChecks(p => ({ ...p, [key]: !p[key] }))} />
-                      {label}
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </label>
+            <h2 style={{ fontSize: 20, marginBottom: 6 }}>어떤 섹션을 다시 쓸까요?</h2>
+            <p style={{ color: 'var(--muted)', fontSize: 14, marginBottom: 20 }}>선택한 섹션만 이 공고에 맞춰 다시 써요.</p>
+            <div className="section-checks">
+              {Object.entries({ basic: '기본 정보', summary: '경력 요약', project: '프로젝트', skills: '스킬' }).map(([key, label]) => (
+                <label className="chip-check" key={key}>
+                  <input type="checkbox" checked={sectionChecks[key]} onChange={() => setSectionChecks(p => ({ ...p, [key]: !p[key] }))} />
+                  {label}
+                </label>
+              ))}
+            </div>
           </section>
 
           {/* Step 3 */}

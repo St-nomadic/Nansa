@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './Landing.css';
 
 export default function Landing() {
@@ -13,11 +13,10 @@ export default function Landing() {
     <div className="page-landing">
       <header className="topnav">
         <div className="container topnav-inner">
-          <span className="logo">Nansa</span>
+          <Link to="/" className="logo">Nansa</Link>
           <nav>
             <a href="#features">기능</a>
             <a href="#how">작동 방식</a>
-            <a onClick={() => navigate('/dashboard')}>대시보드 미리보기</a>
           </nav>
           <button className="btn btn-primary" onClick={() => navigate('/dashboard')}>시작하기</button>
         </div>
@@ -27,7 +26,7 @@ export default function Landing() {
         <section className="section hero">
           <div className="container hero-center">
             <p className="eyebrow">AI 지원 서류 자동화</p>
-            <h1>채용 공고에 맞춰,<br />서류가 스스로 완성됩니다</h1>
+            <h1>채용공고에 맞춰<br />스스로 완성되는 서류</h1>
             <p className="lead">공고 링크나 텍스트를 등록하면 Nansa가 요건을 분석하고 내 경력 데이터와 매칭해 이력서·자기소개서·포트폴리오를 만들어 드립니다.</p>
             <div className="hero-cta">
               <button className="btn btn-primary" onClick={() => navigate('/dashboard')}>무료로 시작하기</button>

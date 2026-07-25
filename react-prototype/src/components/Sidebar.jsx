@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 export default function Sidebar({ active, onMyPage = false }) {
   return (
     <aside className="sidebar">
-      <div className="brand"><span className="dot"></span>Nansa</div>
+      <Link to="/" className="brand"><span className="dot"></span>Nansa</Link>
       <nav>
         <Link to="/dashboard" className={active === 'dashboard' ? 'active' : ''}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="12" width="8" height="9" rx="1.5"/><rect x="3" y="15" width="8" height="6" rx="1.5"/></svg>
