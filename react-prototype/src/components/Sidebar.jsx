@@ -22,6 +22,9 @@ export default function Sidebar({ active, onMyPage = false }) {
           지원 관리
         </Link>
       </nav>
+      <Link to="/me" className={`user-mini${onMyPage ? ' active' : ''}`} aria-label="개인 페이지">
+        <span className="avatar">승</span>
+      </Link>
       <div className={`user-card${onMyPage ? ' on-page' : ''}`} tabIndex={0}>
         <div className="avatar">승</div>
         <div className="who">
