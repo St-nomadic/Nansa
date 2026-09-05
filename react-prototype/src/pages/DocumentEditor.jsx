@@ -1,18 +1,18 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import Sidebar from '../components/Sidebar.jsx';
 import Crumb from '../components/Crumb.jsx';
 import Toast from '../components/Toast.jsx';
 import useToast from '../hooks/useToast.js';
+import {
+  DOC_LABEL,
+  agoLabel,
+  getDocument,
+  getDocuments,
+  getJob,
+  latestDocOfJob,
+} from '../data/nansa.js';
 import './DocumentEditor.css';
-
-const INITIAL_KEYWORDS = [
-  { name: 'Spring Boot', covered: true },
-  { name: 'MSA', covered: true },
-  { name: 'RESTful API', covered: true },
-  { name: 'Kafka', covered: false },
-  { name: 'CI/CD', covered: false },
-];
 
 const INITIAL_CHECKS = [
   { label: '맞춤법 · 문장 흐름 확인 완료', checked: true },
@@ -21,9 +21,35 @@ const INITIAL_CHECKS = [
   { label: '파일명 규칙 확인 (이름_회사_직무_이력서)', checked: false },
 ];
 
+function resolveDoc(params) {
+  const byId = params.get('doc') && getDocument(params.get('doc'));
+  if (byId) return byId;
+  const jobId = params.get('job');
+  const type = params.get('type');
+  if (jobId) {
+    const docs = getDocuments().filter(d => String(d.jobId) === String(jobId) && (!type || d.type === type));
+    if (docs.length) {
+      return docs.sort((a, b) => b.version - a.version)[0];
+    }
+    const latest = latestDocOfJob(jobId);
+    if (latest) return latest;
+  }
+  return getDocuments()[0] || null;
+}
+
 export default function DocumentEditor() {
+  const [params] = useSearchParams();
   const { toast, showToast } = useToast();
-  const [keywords, setKeywords] = useState(INITIAL_KEYWORDS);
+
+  const doc = useMemo(() => resolveDoc(params), [params]);
+  const job = doc ? getJob(doc.jobId) : null;
+  const isNew = params.get('new') === '1';
+
+  const [keywords, setKeywords] = useState(() => {
+    if (!job || !job.keywords.length) return [];
+    const covered = new Set(doc ? doc.covered : []);
+    return job.keywords.map(k => ({ name: k.name, covered: covered.has(k.name) }));
+  });
   const [checks, setChecks] = useState(INITIAL_CHECKS);
 
   function addKeyword(name) {
@@ -36,19 +62,32 @@ export default function DocumentEditor() {
   }
 
   const coveredCount = keywords.filter(k => k.covered).length;
-  const kwPercent = Math.round((coveredCount / keywords.length) * 100);
+  const kwPercent = keywords.length ? Math.round((coveredCount / keywords.length) * 100) : 0;
   const checkedCount = checks.filter(c => c.checked).length;
   const ready = checkedCount === checks.length;
+
+  const docTitle = doc ? `${DOC_LABEL[doc.type]} 초안 · v${doc.version}` : '서류 초안';
+  const jobLabel = job ? `— ${job.title} @ ${job.company}` : '';
+  const editedLabel = isNew ? '방금 생성됨' : doc ? `${agoLabel(doc.updatedAt)} 수정됨` : '';
+  const backTo = job ? `/jobs/${job.id}` : '/jobs';
+
+  const history = isNew
+    ? [{ what: `${DOC_LABEL[doc ? doc.type : 'resume']} 초안 생성`, when: '방금 전' }]
+    : [
+        { what: '경력 요약 문장 다듬기', when: '10분 전' },
+        { what: 'Kafka 키워드 자동 추가', when: '1시간 전' },
+        { what: `v${doc && doc.version > 1 ? doc.version - 1 : 1} → v${doc ? doc.version : 1} 섹션 재생성`, when: doc ? agoLabel(doc.updatedAt) : '' },
+      ];
 
   return (
     <div className="app-shell">
       <Sidebar active="jobs" />
       <div className="main page-editor">
         <header className="topbar">
-          <Crumb to="/jobs/1" label="공고 상세" />
+          <Crumb to={backTo} label="공고 상세" />
           <div className="doc-title-wrap">
-            <h1>이력서 초안 · v2 <span style={{ color: 'var(--muted)', fontWeight: 400 }}>— 백엔드 엔지니어 @ 페이지컴퍼니</span></h1>
-            <div className="doc-sub">표준 톤 · 한국어 · 3일 전 수정됨</div>
+            <h1>{docTitle} <span style={{ color: 'var(--muted)', fontWeight: 400 }}>{jobLabel}</span></h1>
+            <div className="doc-sub">표준 톤 · 한국어 · {editedLabel}</div>
           </div>
           <div className="topbar-actions">
             <button className="btn btn-secondary" onClick={() => showToast('읽기 전용 공유 링크가 복사되었습니다')}>공유 링크</button>
@@ -75,7 +114,7 @@ export default function DocumentEditor() {
                   <h2>경력 요약</h2>
                   <span className="card-sub">클릭해서 바로 수정하세요</span>
                 </div>
-                <div className="editable" contentEditable suppressContentEditableWarning>백엔드 개발 4년차로, 커머스 도메인에서 결제·주문 시스템을 MSA로 전환하고 대용량 트래픽을 안정적으로 처리해 온 엔지니어입니다. Spring Boot와 AWS 기반의 서비스 설계·운영 경험을 바탕으로 페이지컴퍼니의 결제 플랫폼 확장에 기여하고 싶습니다.</div>
+                <div className="editable" contentEditable suppressContentEditableWarning>백엔드 개발 4년차로, 커머스 도메인에서 결제·주문 시스템을 MSA로 전환하고 대용량 트래픽을 안정적으로 처리해 온 엔지니어입니다. Spring Boot와 AWS 기반의 서비스 설계·운영 경험을 바탕으로 {job ? job.company : '지원 회사'}의 서비스 확장에 기여하고 싶습니다.</div>
               </div>
 
               <div className="card">
@@ -142,7 +181,7 @@ export default function DocumentEditor() {
 
               <div className="side-card">
                 <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>키워드 반영 체크</h3>
-                <div className="kw-progress-label"><span>커버리지</span><span className="num" style={{ fontFamily: 'var(--font-mono)', color: 'var(--fg)' }}>{kwPercent}%</span></div>
+                <div className="kw-progress-label"><span>키워드 반영률</span><span className="num" style={{ fontFamily: 'var(--font-mono)', color: 'var(--fg)' }}>{kwPercent}%</span></div>
                 <div className="coverage-bar"><div className="coverage-bar-fill" style={{ width: `${kwPercent}%` }}></div></div>
                 <ul className="kw-list">
                   {keywords.map(k => (
@@ -168,18 +207,12 @@ export default function DocumentEditor() {
 
               <div className="side-card">
                 <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5M12 7v5l4 2"/></svg>변경 이력</h3>
-                <div className="history-item">
-                  <div><div className="hi-what">경력 요약 문장 다듬기</div><div className="hi-when">10분 전</div></div>
-                  <a onClick={() => showToast('이전 버전으로 되돌렸습니다')}>되돌리기</a>
-                </div>
-                <div className="history-item">
-                  <div><div className="hi-what">Kafka 키워드 자동 추가</div><div className="hi-when">1시간 전</div></div>
-                  <a onClick={() => showToast('이전 버전으로 되돌렸습니다')}>되돌리기</a>
-                </div>
-                <div className="history-item">
-                  <div><div className="hi-what">v1 → v2 섹션 재생성</div><div className="hi-when">3일 전</div></div>
-                  <a onClick={() => showToast('이전 버전으로 되돌렸습니다')}>되돌리기</a>
-                </div>
+                {history.map(h => (
+                  <div className="history-item" key={h.what}>
+                    <div><div className="hi-what">{h.what}</div><div className="hi-when">{h.when}</div></div>
+                    <button type="button" className="history-undo" onClick={() => showToast('이전 버전으로 되돌렸습니다')}>되돌리기</button>
+                  </div>
+                ))}
               </div>
             </aside>
           </div>
