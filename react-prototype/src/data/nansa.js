@@ -353,9 +353,15 @@ export function analyzeJdText(text) {
   if (!text || !text.trim()) return null;
   const buckets = { duty: [], req: [], plus: [] };
   let current = 'duty';
+  // 대괄호 소제목이 있으면 첫 소제목 앞의 제목 줄은 본문에서 제외한다
+  const hasHeading = /^\s*[\[■◆●]/m.test(text);
+  let seenHeading = false;
   text.split('\n').forEach(line => {
     const t = line.trim();
     if (!t) return;
+    const isHeading = /^\[.*\]$/.test(t) || /^[■◆●]/.test(t);
+    if (hasHeading && !seenHeading && !isHeading) return;
+    if (isHeading) seenHeading = true;
     const heading = t.match(/^[\[(]?\s*(.+?)\s*[\])]?$/);
     const head = heading ? heading[1] : t;
     if (/^\[.*\]$/.test(t) || /^[■◆●]/.test(t)) {
