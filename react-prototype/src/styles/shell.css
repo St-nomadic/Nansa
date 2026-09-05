@@ -39,7 +39,7 @@
   .sidebar nav a { white-space: nowrap; }
   /* hover 플라이아웃은 터치에서 못 여니 데스크톱에서만 사용 */
   .sidebar .user-card { display: none; }
-  .sidebar .user-mini { display: flex; }
+  .user-mini { display: flex; }
 }
 
 .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--fg); color: var(--bg); padding: 12px 20px; border-radius: var(--radius-pill); font-size: 13px; opacity: 0; pointer-events: none; transition: all var(--motion-base) var(--ease-standard); z-index: 60; }
