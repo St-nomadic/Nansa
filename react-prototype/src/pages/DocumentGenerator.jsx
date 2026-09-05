@@ -1,7 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Sidebar from '../components/Sidebar.jsx';
 import Crumb from '../components/Crumb.jsx';
+import {
+  DOC_LABEL,
+  SECTIONS_BY_TYPE,
+  addDocument,
+  getJob,
+} from '../data/nansa.js';
 import './DocumentGenerator.css';
 
 const TYPES = [
@@ -17,37 +23,116 @@ const STEPS = [
   { n: 4, label: '생성 결과' },
 ];
 
-const GEN_STEPS = ['JD 요건 분석 반영', '경력 데이터 매칭', '문장 생성 및 근거 정리', '키워드 커버리지 점검'];
+const TYPE_ORDER = ['resume', 'cover-letter', 'portfolio'];
+
+const MATCH_POINTS = {
+  resume: [
+    { text: 'MSA 환경에서 주문·결제 서비스를 분리하며 서비스 간 트래픽을 30% 절감한 경험이 있습니다.', source: 'MSA 전환 프로젝트 (2024)' },
+    { text: 'Spring Boot 기반 결제 API를 설계하고 코드 리뷰 프로세스를 정착시켰습니다.', source: '커머스 결제 시스템 리팩토링' },
+  ],
+  'cover-letter': [
+    { text: '레거시 결제 모듈을 재작성하며, 장애를 줄이는 일이 곧 사용자 신뢰를 쌓는 일이라는 걸 배웠습니다.', source: '커머스 결제 시스템 리팩토링' },
+    { text: '배포 주기를 2주에서 2일로 줄이며 팀 전체의 실험 속도를 끌어올린 경험이 있습니다.', source: 'MSA 전환 프로젝트 (2024)' },
+  ],
+  portfolio: [
+    { text: '프로젝트별로 담당 범위 · 기술 선택 이유 · 정량 성과를 한 장으로 정리했습니다.', source: '대표 프로젝트 2건 선별' },
+    { text: '트래픽 처리량 3배 증설, 평균 응답 시간 120ms 개선 등 수치 중심으로 서술했습니다.', source: '성과 지표 섹션' },
+  ],
+};
+
+const BASE_COVERAGE = { resume: 89, 'cover-letter': 84, portfolio: 78 };
+
+function genStepsFor(typeKey) {
+  return [
+    'JD 요건 분석 반영',
+    '경력 데이터 매칭',
+    DOC_LABEL[typeKey] + ' 문장 생성 및 근거 정리',
+    '키워드 커버리지 점검',
+  ];
+}
 
 export default function DocumentGenerator() {
   const [params] = useSearchParams();
+  const jobId = params.get('job') || '1';
+  const job = getJob(jobId);
+
   const [step, setStep] = useState(() => (params.get('types') ? 2 : 1));
   const [selectedTypes, setSelectedTypes] = useState(() => {
     const types = params.get('types');
     if (types) return new Set(types.split(',').filter(Boolean));
     return new Set([params.get('type') || 'resume']);
   });
-  const [sectionChecks, setSectionChecks] = useState({ basic: true, summary: true, project: false, skills: false });
+  const [sectionChecks, setSectionChecks] = useState({});
   const [tone, setTone] = useState('표준');
   const [length, setLength] = useState('보통');
   const [lang, setLang] = useState('한국어');
   const [highlighted, setHighlighted] = useState(new Set(['커머스 결제 시스템 리팩토링', 'MSA 전환 프로젝트']));
-  const [completed, setCompleted] = useState(0);
 
+  // 선택한 서류를 하나씩 순차 생성
+  const [queueIndex, setQueueIndex] = useState(0);
+  const [completedSteps, setCompletedSteps] = useState(0);
+  const [results, setResults] = useState([]);
+  const savedRef = useRef(false);
+
+  const orderedTypes = useMemo(
+    () => TYPE_ORDER.filter(t => selectedTypes.has(t)),
+    [selectedTypes],
+  );
+
+  // 선택한 서류가 바뀌면 섹션 체크박스를 기본 전체 선택으로 맞춘다
+  useEffect(() => {
+    setSectionChecks(prev => {
+      const next = { ...prev };
+      orderedTypes.forEach(type => {
+        SECTIONS_BY_TYPE[type].forEach(s => {
+          const id = type + '.' + s.key;
+          if (next[id] === undefined) next[id] = true;
+        });
+      });
+      return next;
+    });
+  }, [orderedTypes]);
+
+  // 4단계: 서류를 순서대로 생성
   useEffect(() => {
     if (step !== 4) return;
-    setCompleted(0);
+    if (queueIndex >= orderedTypes.length) return;
+    const steps = genStepsFor(orderedTypes[queueIndex]);
     const id = setInterval(() => {
-      setCompleted(c => {
-        if (c + 1 >= GEN_STEPS.length) {
+      setCompletedSteps(c => {
+        if (c + 1 >= steps.length) {
           clearInterval(id);
-          return GEN_STEPS.length;
+          const type = orderedTypes[queueIndex];
+          setResults(r => [...r, { type, coverage: BASE_COVERAGE[type] || 80 }]);
+          setQueueIndex(i => i + 1);
+          return 0;
         }
         return c + 1;
       });
-    }, 650);
+    }, 550);
     return () => clearInterval(id);
-  }, [step]);
+  }, [step, queueIndex, orderedTypes]);
+
+  const allDone = step === 4 && queueIndex >= orderedTypes.length && orderedTypes.length > 0;
+
+  // 생성이 끝나면 실제 서류 레코드를 저장 (중복 저장 방지)
+  useEffect(() => {
+    if (!allDone || savedRef.current || !job) return;
+    savedRef.current = true;
+    const covered = (job.keywords || []).map(k => k.name);
+    results.forEach(r => {
+      const take = Math.max(1, Math.round((covered.length * r.coverage) / 100));
+      addDocument({ jobId: job.id, type: r.type, covered: covered.slice(0, take), tone, lang });
+    });
+  }, [allDone, results, job, tone, lang]);
+
+  function startGenerate() {
+    setResults([]);
+    setQueueIndex(0);
+    setCompletedSteps(0);
+    savedRef.current = false;
+    setStep(4);
+  }
 
   function toggleType(key) {
     setSelectedTypes(prev => {
@@ -69,15 +154,17 @@ export default function DocumentGenerator() {
     });
   }
 
-  const generating = completed < GEN_STEPS.length;
+  const currentType = orderedTypes[queueIndex];
+  const currentSteps = currentType ? genStepsFor(currentType) : [];
+  const backTo = `/jobs/${jobId}`;
 
   return (
     <div className="app-shell">
       <Sidebar active="jobs" />
       <div className="main page-generator">
         <header className="topbar">
-          <Crumb to="/jobs/1" label="공고 상세" />
-          <h1>맞춤 서류 생성 · 백엔드 엔지니어 @ 페이지컴퍼니</h1>
+          <Crumb to={backTo} label="공고 상세" />
+          <h1>맞춤 서류 생성 · {job ? `${job.title} @ ${job.company}` : '공고를 찾을 수 없음'}</h1>
           <span style={{ width: 70 }}></span>
         </header>
 
@@ -96,14 +183,20 @@ export default function DocumentGenerator() {
           {/* Step 1 */}
           <section className={`panel${step === 1 ? ' active' : ''}`}>
             <h2 style={{ fontSize: 20, marginBottom: 6 }}>어떤 서류를 만들까요?</h2>
-            <p style={{ color: 'var(--muted)', fontSize: 14, marginBottom: 20 }}>여러 개를 선택해 순차로 생성할 수 있어요.</p>
+            <p style={{ color: 'var(--muted)', fontSize: 14, marginBottom: 20 }}>여러 개를 선택하면 선택한 순서대로 하나씩 생성해 드려요.</p>
             <div className="type-grid">
               {TYPES.map(t => (
-                <div key={t.key} className={`type-card${selectedTypes.has(t.key) ? ' selected' : ''}`} onClick={() => toggleType(t.key)}>
+                <button
+                  type="button"
+                  key={t.key}
+                  className={`type-card${selectedTypes.has(t.key) ? ' selected' : ''}`}
+                  aria-pressed={selectedTypes.has(t.key)}
+                  onClick={() => toggleType(t.key)}
+                >
                   <div className="type-mark">{t.icon}</div>
                   <h3>{t.title}</h3>
                   <p>{t.desc}</p>
-                </div>
+                </button>
               ))}
             </div>
           </section>
@@ -112,14 +205,26 @@ export default function DocumentGenerator() {
           <section className={`panel${step === 2 ? ' active' : ''}`}>
             <h2 style={{ fontSize: 20, marginBottom: 6 }}>어떤 섹션을 다시 쓸까요?</h2>
             <p style={{ color: 'var(--muted)', fontSize: 14, marginBottom: 20 }}>선택한 섹션만 이 공고에 맞춰 다시 써요.</p>
-            <div className="section-checks">
-              {Object.entries({ basic: '기본 정보', summary: '경력 요약', project: '프로젝트', skills: '스킬' }).map(([key, label]) => (
-                <label className="chip-check" key={key}>
-                  <input type="checkbox" checked={sectionChecks[key]} onChange={() => setSectionChecks(p => ({ ...p, [key]: !p[key] }))} />
-                  {label}
-                </label>
-              ))}
-            </div>
+            {orderedTypes.map(type => (
+              <div className="section-block" key={type}>
+                <h3 className="section-block-title">{DOC_LABEL[type]}</h3>
+                <div className="section-checks">
+                  {SECTIONS_BY_TYPE[type].map(s => {
+                    const id = type + '.' + s.key;
+                    return (
+                      <label className="chip-check" key={id}>
+                        <input
+                          type="checkbox"
+                          checked={sectionChecks[id] !== false}
+                          onChange={() => setSectionChecks(p => ({ ...p, [id]: !(p[id] !== false) }))}
+                        />
+                        {s.label}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </section>
 
           {/* Step 3 */}
@@ -161,43 +266,56 @@ export default function DocumentGenerator() {
 
           {/* Step 4 */}
           <section className={`panel${step === 4 ? ' active' : ''}`}>
-            {generating ? (
+            {!allDone ? (
               <div className="gen-loading">
                 <div className="gen-spinner"></div>
-                <h2 style={{ fontSize: 17 }}>JD 요건에 맞춰 서류를 생성하고 있어요</h2>
+                <h2 style={{ fontSize: 17 }}>
+                  {DOC_LABEL[currentType] || '서류'}를 생성하고 있어요
+                  {orderedTypes.length > 1 && <span className="gen-progress"> ({queueIndex + 1}/{orderedTypes.length})</span>}
+                </h2>
                 <ul className="gen-steps">
-                  {GEN_STEPS.map((label, i) => (
-                    <li key={label} className={i < completed ? 'gs-done' : i === completed ? 'gs-active' : ''}>
+                  {currentSteps.map((label, i) => (
+                    <li key={label} className={i < completedSteps ? 'gs-done' : i === completedSteps ? 'gs-active' : ''}>
                       <span className="gs-dot"></span>{label}
                     </li>
                   ))}
                 </ul>
+                {results.length > 0 && (
+                  <p className="gen-done-note">완료: {results.map(r => DOC_LABEL[r.type]).join(' · ')}</p>
+                )}
               </div>
             ) : (
               <div>
                 <div className="result-head">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6"/></svg>
-                  <h2 style={{ fontSize: 20 }}>이력서 초안이 완성됐어요</h2>
+                  <h2 style={{ fontSize: 20 }}>
+                    {results.length > 1
+                      ? `${results.length}개 서류 초안이 완성됐어요`
+                      : `${DOC_LABEL[results[0] ? results[0].type : 'resume']} 초안이 완성됐어요`}
+                  </h2>
                 </div>
-                <div className="result-card">
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-2)' }}>키워드 반영률</span>
-                    <span className="meta" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg)' }}>87%</span>
+
+                {results.map(r => (
+                  <div className="result-block" key={r.type}>
+                    <div className="result-card">
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4, gap: 10 }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-2)' }}>{DOC_LABEL[r.type]} · 키워드 반영률</span>
+                        <span className="meta" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg)' }}>{r.coverage}%</span>
+                      </div>
+                      <div className="coverage-bar"><div className="coverage-bar-fill" style={{ width: r.coverage + '%' }}></div></div>
+                    </div>
+                    {(MATCH_POINTS[r.type] || []).map(mp => (
+                      <div className="match-point" key={mp.text}>
+                        <div className="mp-text">&ldquo;{mp.text}&rdquo;</div>
+                        <div className="mp-source"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>근거 · {mp.source}</div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="coverage-bar"><div className="coverage-bar-fill" style={{ width: '87%' }}></div></div>
-                </div>
-                <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 10 }}>주요 매칭 포인트 미리보기</p>
-                <div className="match-point">
-                  <div className="mp-text">&ldquo;MSA 환경에서 주문·결제 서비스를 분리하며 서비스 간 트래픽을 30% 절감한 경험이 있습니다.&rdquo;</div>
-                  <div className="mp-source"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>근거 · MSA 전환 프로젝트 (2024)</div>
-                </div>
-                <div className="match-point">
-                  <div className="mp-text">&ldquo;Spring Boot 기반 결제 API를 설계하고 코드 리뷰 프로세스를 정착시켰습니다.&rdquo;</div>
-                  <div className="mp-source"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>근거 · 커머스 결제 시스템 리팩토링</div>
-                </div>
+                ))}
+
                 <div className="wizard-nav">
-                  <Link className="btn btn-secondary" to="/jobs/1">나중에 이어하기</Link>
-                  <Link className="btn btn-primary" to="/editor">편집기에서 검토하기</Link>
+                  <Link className="btn btn-secondary" to={backTo}>나중에 이어하기</Link>
+                  <Link className="btn btn-primary" to={`/editor?job=${jobId}&type=${results[0] ? results[0].type : 'resume'}&new=1`}>편집기에서 검토하기</Link>
                 </div>
               </div>
             )}
@@ -206,7 +324,9 @@ export default function DocumentGenerator() {
           {step !== 4 && (
             <div className="wizard-nav">
               <button className="btn btn-secondary" disabled={step === 1} onClick={() => setStep(s => Math.max(1, s - 1))}>이전</button>
-              <button className="btn btn-primary" onClick={() => setStep(s => Math.min(4, s + 1))}>{step === 3 ? '서류 생성하기' : '다음'}</button>
+              <button className="btn btn-primary" onClick={() => (step === 3 ? startGenerate() : setStep(s => Math.min(4, s + 1)))}>
+                {step === 3 ? `서류 생성하기 (${orderedTypes.length})` : '다음'}
+              </button>
             </div>
           )}
         </div>
