@@ -15,7 +15,7 @@ export default function Applications() {
         <header className="topbar">
           <h1>지원 관리</h1>
           <div className="view-toggle">
-            <button className={view === 'kanban' ? 'active' : ''} onClick={() => setView('kanban')}>칸반</button>
+            <button className={view === 'kanban' ? 'active' : ''} onClick={() => setView('kanban')}>보드</button>
             <button className={view === 'list' ? 'active' : ''} onClick={() => setView('list')}>리스트</button>
           </div>
         </header>

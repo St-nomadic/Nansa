@@ -90,7 +90,7 @@ export default function Dashboard() {
           <section className="section-gap" style={{ marginBottom: 40 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
               <h2 style={{ fontSize: 18 }}>지원 현황</h2>
-              <Link to="/applications" className="btn btn-ghost btn-sm">칸반 전체 보기</Link>
+              <Link to="/applications" className="btn btn-ghost btn-sm">전체 보기</Link>
             </div>
             <div className="kanban-mini">
               <div className="kcol">
