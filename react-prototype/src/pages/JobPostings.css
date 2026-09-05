@@ -8,13 +8,13 @@
   .page-jobs .topbar { padding: 14px 20px; }
 }
 
-.page-jobs .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: var(--radius-pill); border: 1px solid transparent; font-size: 14px; font-weight: 500; transition: background var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard); }
+.page-jobs .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 18px; border-radius: var(--radius-pill); border: 1px solid transparent; font-size: 14px; font-weight: 500; font-family: inherit; line-height: 1.25; letter-spacing: -0.015em; white-space: nowrap; word-break: keep-all; text-decoration: none; flex-shrink: 0; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; transition: background var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard); }
 .page-jobs .btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 .page-jobs .btn-primary { background: var(--accent); color: var(--accent-on); }
 .page-jobs .btn-primary:hover { background: var(--accent-hover); }
 .page-jobs .btn-secondary { background: var(--surface); color: var(--fg); border-color: var(--border); }
 .page-jobs .btn-secondary:hover { border-color: var(--meta); }
-.page-jobs .btn-xs { padding: 6px 13px; font-size: 12.5px; }
+.page-jobs .btn-xs { padding: 5px 11px; font-size: 12px; line-height: 1.2; letter-spacing: -0.015em; }
 
 .page-jobs .card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 26px; }
 

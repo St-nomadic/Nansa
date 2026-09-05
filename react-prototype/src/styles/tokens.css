@@ -90,3 +90,34 @@ button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
 h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 600; letter-spacing: var(--tracking-display); margin: 0; text-wrap: balance; word-break: keep-all; overflow-wrap: break-word; }
 p { margin: 0; text-wrap: pretty; word-break: keep-all; overflow-wrap: break-word; }
+
+.btn {
+  font-family: inherit;
+  white-space: nowrap;
+  word-break: keep-all;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  text-decoration: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  box-sizing: border-box;
+}
+
+.btn-xs {
+  font-size: 11.5px;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+  word-break: keep-all;
+}
+
+.badge {
+  font-family: inherit;
+  white-space: nowrap;
+  word-break: keep-all;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
