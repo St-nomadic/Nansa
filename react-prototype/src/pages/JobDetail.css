@@ -78,3 +78,20 @@
 .page-job-detail .draft-row .draft-title { font-size: 14px; font-weight: 600; }
 .page-job-detail .draft-row .draft-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
 .page-job-detail .draft-row .draft-actions { display: flex; gap: 8px; }
+
+/* --- 공고별 상세: 상태 배지 / 빈 상태 / 접근성 --- */
+.page-job-detail .badge.b-neutral { background: var(--border-soft); color: var(--fg-2); }
+.page-job-detail .badge.b-green { background: var(--success-soft); color: var(--success); }
+.page-job-detail .badge.b-red { background: var(--danger-soft); color: var(--danger); }
+
+.page-job-detail .empty-state { text-align: center; padding: 36px 24px; color: var(--muted); }
+.page-job-detail .empty-state p { font-size: 14px; line-height: 1.75; }
+.page-job-detail .empty-state strong { color: var(--fg-2); }
+
+/* 서류 유형 카드를 button 으로 바꾸면서 필요한 초기화 (키보드 선택 가능해짐) */
+.page-job-detail button.cta-card { width: 100%; text-align: left; background: var(--bg); font: inherit; color: inherit; }
+.page-job-detail button.cta-card:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.page-job-detail button.cta-card.selected { background: var(--accent-soft); }
+
+.page-job-detail .job-head .deadline-box .date { white-space: nowrap; }
+@media (max-width: 780px) { .page-job-detail .draft-row { flex-direction: column; align-items: flex-start; } }
