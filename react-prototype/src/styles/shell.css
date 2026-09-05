@@ -32,15 +32,23 @@
 
 @media (max-width: 880px) {
   .app-shell { flex-direction: column; }
-  .sidebar { width: 100%; height: auto; position: static; flex-direction: row; align-items: center; padding: 10px 14px; overflow-x: auto; }
-  .sidebar .brand { padding: 0 14px 0 0; }
-  .sidebar nav { flex-direction: row; gap: 4px; }
+  /* 가로 스크롤 대신 2줄로 감싸서 메뉴가 잘리지 않게 */
+  .sidebar { width: 100%; height: auto; position: static; flex-direction: row; flex-wrap: wrap; align-items: center; padding: 10px 14px; row-gap: 8px; overflow-x: visible; }
+  .sidebar .brand { padding: 0 14px 0 0; flex: none; }
+  .sidebar nav { flex: 1 1 100%; flex-direction: row; flex-wrap: wrap; gap: 4px; }
   .sidebar nav a { white-space: nowrap; }
+  /* hover 플라이아웃은 터치에서 못 여니 데스크톱에서만 사용 */
   .sidebar .user-card { display: none; }
+  .user-mini { display: flex; }
 }
 
 .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--fg); color: var(--bg); padding: 12px 20px; border-radius: var(--radius-pill); font-size: 13px; opacity: 0; pointer-events: none; transition: all var(--motion-base) var(--ease-standard); z-index: 60; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-.crumb { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+/* 모바일 전용: /me 로 바로 가는 아바타 링크 (사이드바 유저카드가 숨겨지므로) */
+.user-mini { display: none; margin-left: auto; flex: none; align-items: center; gap: 8px; padding: 4px; border-radius: var(--radius-pill); }
+.user-mini:hover, .user-mini.active { background: var(--border-soft); }
+.user-mini .avatar { width: 30px; height: 30px; font-size: 12px; }
+
+.crumb { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; white-space: nowrap; flex: none; }
 .crumb:hover { color: var(--fg); }
