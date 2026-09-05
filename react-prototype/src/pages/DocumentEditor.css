@@ -12,6 +12,13 @@
   .page-editor .content { padding: 18px; }
   .page-editor .topbar { padding: 12px 18px; }
 }
+/* 모바일: 뒤로가기 / 문서 제목 / 액션 버튼을 세로로 분리 */
+@media (max-width: 640px) {
+  .page-editor .topbar { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .page-editor .doc-title-wrap { min-width: 0; width: 100%; }
+  .page-editor .doc-title-wrap h1 { font-size: 15px; line-height: 1.4; }
+  .page-editor .topbar-actions { width: 100%; flex-wrap: wrap; }
+}
 
 .page-editor .btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 16px; border-radius: var(--radius-pill); border: 1px solid transparent; font-size: 13.5px; font-weight: 500; transition: background var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard); white-space: nowrap; }
 .page-editor .btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
