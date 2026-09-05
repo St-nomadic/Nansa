@@ -10,10 +10,11 @@ const DocumentEditor = lazy(() => import('./pages/DocumentEditor.jsx'));
 const Profile = lazy(() => import('./pages/Profile.jsx'));
 const Applications = lazy(() => import('./pages/Applications.jsx'));
 const MyPage = lazy(() => import('./pages/MyPage.jsx'));
+const NotFound = lazy(() => import('./pages/NotFound.jsx'));
 
 export default function App() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<div style={{ padding: 40, color: '#86868b', fontSize: 14 }}>불러오는 중…</div>}>
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/dashboard" element={<Dashboard />} />
@@ -24,6 +25,7 @@ export default function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/applications" element={<Applications />} />
         <Route path="/me" element={<MyPage />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>
   );
