@@ -7,6 +7,18 @@
   .page-generator .topbar { padding: 14px 20px; }
   .page-generator .topbar h1 { font-size: 14px; }
 }
+/* 모바일: 뒤로가기와 제목이 한 줄에 엉키지 않게 세로로 쌓기 */
+@media (max-width: 640px) {
+  .page-generator .topbar { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .page-generator .topbar h1 { font-size: 15px; line-height: 1.4; }
+  /* 스테퍼 가로 넘침 방지: 현재 단계 라벨만 노출 */
+  .page-generator .stepper { margin-bottom: 24px; min-width: 0; }
+  .page-generator .stepper .sp-item { gap: 6px; min-width: 0; }
+  .page-generator .stepper .sp-label { display: none; }
+  .page-generator .stepper .sp-item.current .sp-label { display: block; font-size: 12px; }
+  .page-generator .stepper .sp-line { margin: 0 4px; }
+  .page-generator .wizard-nav { gap: 10px; }
+}
 
 .page-generator .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: var(--radius-pill); border: 1px solid transparent; font-size: 14px; font-weight: 500; transition: background var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard); }
 .page-generator .btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
