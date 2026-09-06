@@ -1,20 +1,200 @@
+import { useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Sidebar from '../components/Sidebar.jsx';
+import Toast from '../components/Toast.jsx';
+import useToast from '../hooks/useToast.js';
 import { IconPlus, IconTrash } from '../components/icons.jsx';
+import {
+  METRIC_PRESETS,
+  achievementsOfBullet,
+  addAchievement,
+  addBullet,
+  addCareer,
+  formatAchievement,
+  followUpQuestions,
+  getAchievements,
+  getCareers,
+  isQuantified,
+  parseAnswer,
+  quantScore,
+  removeBullet,
+  removeCareer,
+  scoreLabel,
+  suggestBulletText,
+  updateBullet,
+} from '../data/career.js';
 import './Profile.css';
 
-const TRASH_ICON = <IconTrash />;
+const EMPTY_FORM = { role: '', company: '', project: '', start: '', end: '', tags: '', bullet: '' };
 
 export default function Profile() {
+  const { toast, showToast } = useToast();
+  const [tick, setTick] = useState(0);
+  const [adding, setAdding] = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [formError, setFormError] = useState('');
+  const [interview, setInterview] = useState(null); // { careerId, bulletId, qIndex, step, answer, parsed, draft }
+  const [newBullet, setNewBullet] = useState({});
+  const answerRef = useRef(null);
+
+  const careers = useMemo(() => getCareers(), [tick]);
+  const achievements = useMemo(() => getAchievements(), [tick]);
+  const quant = useMemo(() => quantScore(), [tick]);
+  const label = scoreLabel(quant.score);
+
+  function refresh() {
+    setTick(t => t + 1);
+  }
+
+  /* ---------------- 성과 인터뷰 ---------------- */
+
+  function openInterview(careerId, bullet) {
+    const questions = followUpQuestions(bullet.text);
+    setInterview({
+      careerId,
+      bulletId: bullet.id,
+      bulletText: bullet.text,
+      questions,
+      qIndex: 0,
+      step: 'ask',
+      answer: '',
+      parsed: null,
+      draft: '',
+      miss: false,
+    });
+    window.setTimeout(() => answerRef.current && answerRef.current.focus(), 60);
+  }
+
+  function closeInterview() {
+    setInterview(null);
+  }
+
+  function nextQuestion() {
+    setInterview(iv => (iv ? { ...iv, qIndex: (iv.qIndex + 1) % iv.questions.length, answer: '', miss: false } : iv));
+    window.setTimeout(() => answerRef.current && answerRef.current.focus(), 60);
+  }
+
+  function submitAnswer() {
+    if (!interview) return;
+    const question = interview.questions[interview.qIndex];
+    const parsed = parseAnswer(interview.answer, question);
+    if (!parsed) {
+      setInterview({ ...interview, miss: true });
+      return;
+    }
+    setInterview({
+      ...interview,
+      step: 'confirm',
+      parsed,
+      miss: false,
+      draft: suggestBulletText(interview.bulletText, parsed),
+    });
+  }
+
+  function applyAchievement() {
+    if (!interview || !interview.parsed) return;
+    updateBullet(interview.careerId, interview.bulletId, interview.draft.trim() || interview.bulletText);
+    addAchievement({
+      careerId: interview.careerId,
+      bulletId: interview.bulletId,
+      ...interview.parsed,
+    });
+    closeInterview();
+    refresh();
+    showToast('성과를 숫자로 저장했어요');
+  }
+
+  function usePreset(preset) {
+    setInterview(iv => (iv ? { ...iv, answer: iv.answer ? iv.answer : `${preset.label} `, miss: false } : iv));
+    window.setTimeout(() => answerRef.current && answerRef.current.focus(), 30);
+  }
+
+  /* ---------------- 경력 추가 ---------------- */
+
+  function submitCareer() {
+    if (!form.role.trim() || !form.company.trim()) {
+      setFormError('역할과 회사는 꼭 입력해 주세요.');
+      return;
+    }
+    const created = addCareer({
+      role: form.role,
+      company: form.company,
+      project: form.project,
+      start: form.start,
+      end: form.end,
+      tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
+      bullets: form.bullet.trim() ? [form.bullet.trim()] : [],
+    });
+    setForm(EMPTY_FORM);
+    setFormError('');
+    setAdding(false);
+    refresh();
+    showToast('경력을 추가했어요');
+    // 성과 한 줄을 적었는데 숫자가 없다면, 바로 되묻는다.
+    const first = created.bullets[0];
+    if (first && !isQuantified(first, [])) {
+      window.setTimeout(() => openInterview(created.id, first), 260);
+    }
+  }
+
+  function submitNewBullet(careerId) {
+    const text = (newBullet[careerId] || '').trim();
+    if (!text) return;
+    const bullet = addBullet(careerId, text);
+    setNewBullet({ ...newBullet, [careerId]: '' });
+    refresh();
+    if (!isQuantified(bullet, [])) {
+      window.setTimeout(() => openInterview(careerId, bullet), 200);
+    } else {
+      showToast('성과를 추가했어요');
+    }
+  }
+
+  function scrollToFirstGap() {
+    const el = document.querySelector('.bullet-row.needs-metric');
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.add('flash');
+    window.setTimeout(() => el.classList.remove('flash'), 1400);
+  }
+
+  const currentQuestion = interview ? interview.questions[interview.qIndex] : null;
+
   return (
     <div className="app-shell">
       <Sidebar active="profile" />
       <div className="main page-profile">
         <header className="topbar">
           <h1>프로필 · 경력 관리</h1>
-          <span className="meta" style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--muted)' }}>마지막 저장 2분 전</span>
+          <span className={`quant-pill ${label.tone}`}>
+            정량성 {quant.score}%
+          </span>
         </header>
 
         <div className="content">
+          {/* 정량성 점수: JD 키워드 커버리지와 짝을 이루는 두 번째 축 */}
+          <section className={`card quant-card ${label.tone}`}>
+            <div className="quant-left">
+              <div className="quant-ring" style={{ '--pct': `${quant.score}` }}>
+                <span className="quant-num">{quant.score}<i>%</i></span>
+              </div>
+            </div>
+            <div className="quant-body">
+              <h2>경력 정량성 · {label.text}</h2>
+              <p>
+                성과 문장 {quant.total}개 중 <strong>{quant.filled}개</strong>에 숫자가 들어 있어요.
+                면접관과 ATS가 가장 먼저 붙잡는 건 형용사가 아니라 숫자입니다.
+              </p>
+              {quant.gaps > 0 ? (
+                <button className="btn btn-primary btn-xs" onClick={scrollToFirstGap}>
+                  숫자 빠진 문장 {quant.gaps}개 보완하기
+                </button>
+              ) : (
+                <span className="quant-done">모든 문장에 숫자가 들어갔어요 👏</span>
+              )}
+            </div>
+          </section>
+
           <section className="card">
             <div className="card-head"><h2>기본 정보</h2></div>
             <div className="field-row">
@@ -28,67 +208,182 @@ export default function Profile() {
           <section className="card">
             <div className="card-head">
               <h2>경력 · 프로젝트</h2>
-              <button className="btn btn-secondary btn-xs" onClick={() => alert('경력 항목 추가 폼이 열립니다')}>
+              <button className="btn btn-secondary btn-xs" onClick={() => { setAdding(v => !v); setFormError(''); }}>
                 <IconPlus />
-                경력 추가
+                {adding ? '입력 접기' : '경력 추가'}
               </button>
             </div>
-            <div className="exp-item">
-              <div className="exp-head">
-                <div>
-                  <div className="exp-role">백엔드 엔지니어</div>
-                  <div className="exp-company">다우기술 · MSA 전환 프로젝트</div>
+
+            <div className={`career-form${adding ? ' open' : ''}`}>
+              <div className="career-form-inner">
+                <div className="cf-grid">
+                  <div className="field"><label>역할 *</label><input className="input" placeholder="예: SI PM" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} /></div>
+                  <div className="field"><label>회사 *</label><input className="input" placeholder="예: 모멘티" value={form.company} onChange={e => setForm({ ...form, company: e.target.value })} /></div>
+                  <div className="field"><label>프로젝트</label><input className="input" placeholder="예: 대외 포털 고도화" value={form.project} onChange={e => setForm({ ...form, project: e.target.value })} /></div>
+                  <div className="field"><label>기술 · 키워드 (쉼표로 구분)</label><input className="input" placeholder="예: 요구사항관리, WBS, Jira" value={form.tags} onChange={e => setForm({ ...form, tags: e.target.value })} /></div>
+                  <div className="field"><label>시작</label><input className="input" placeholder="2024.03" value={form.start} onChange={e => setForm({ ...form, start: e.target.value })} /></div>
+                  <div className="field"><label>종료</label><input className="input" placeholder="2025.08 또는 재직중" value={form.end} onChange={e => setForm({ ...form, end: e.target.value })} /></div>
                 </div>
-                <div className="exp-actions">
-                  <span className="exp-period">2023.03 – 2024.06</span>
-                  <button className="btn-icon" title="삭제">{TRASH_ICON}</button>
+                <div className="field">
+                  <label>대표 성과 한 줄</label>
+                  <input
+                    className="input"
+                    placeholder="예: 요구사항 변경 프로세스를 정비해 재작업을 줄임"
+                    value={form.bullet}
+                    onChange={e => setForm({ ...form, bullet: e.target.value })}
+                    onKeyDown={e => { if (e.key === 'Enter') submitCareer(); }}
+                  />
+                  <p className="field-hint">숫자가 없어도 괜찮아요. 저장하면 바로 몇 가지만 되물어서 같이 채워 드릴게요.</p>
+                </div>
+                {formError && <p className="form-error" role="alert">{formError}</p>}
+                <div className="cf-actions">
+                  <button className="btn btn-secondary btn-xs" onClick={() => { setAdding(false); setForm(EMPTY_FORM); setFormError(''); }}>취소</button>
+                  <button className="btn btn-primary btn-xs" onClick={submitCareer}>추가하기</button>
                 </div>
               </div>
-              <div className="exp-body">
-                <ul>
-                  <li>주문·결제 모놀리식 서비스를 8개 마이크로서비스로 분리, 배포 주기를 2주 → 2일로 단축</li>
-                  <li>서비스 간 통신을 gRPC로 전환해 평균 응답 시간 120ms 개선</li>
-                </ul>
-              </div>
-              <div className="exp-tags"><span className="tag">Spring Boot</span><span className="tag">MSA</span><span className="tag">Kafka</span></div>
             </div>
-            <div className="exp-item">
-              <div className="exp-head">
-                <div>
-                  <div className="exp-role">백엔드 엔지니어</div>
-                  <div className="exp-company">다우기술 · 커머스 결제 시스템 리팩토링</div>
+
+            {careers.length === 0 && (
+              <p className="exp-empty">아직 등록한 경력이 없어요. 위에서 첫 경력을 추가해 보세요.</p>
+            )}
+
+            {careers.map(career => (
+              <div className="exp-item" key={career.id}>
+                <div className="exp-head">
+                  <div>
+                    <div className="exp-role">{career.role}</div>
+                    <div className="exp-company">{career.company}{career.project ? ` · ${career.project}` : ''}</div>
+                  </div>
+                  <div className="exp-actions">
+                    <span className="exp-period">{career.start}{career.end ? ` – ${career.end}` : ''}</span>
+                    <button
+                      className="btn-icon"
+                      title="경력 삭제"
+                      onClick={() => { removeCareer(career.id); refresh(); showToast('경력을 삭제했어요'); }}
+                    >
+                      <IconTrash />
+                    </button>
+                  </div>
                 </div>
-                <div className="exp-actions">
-                  <span className="exp-period">2022.01 – 2022.12</span>
-                  <button className="btn-icon" title="삭제">{TRASH_ICON}</button>
+
+                <div className="exp-body">
+                  {career.bullets.map(bullet => {
+                    const own = achievementsOfBullet(bullet.id);
+                    const ok = isQuantified(bullet, achievements);
+                    const open = interview && interview.bulletId === bullet.id;
+                    return (
+                      <div className={`bullet-row${ok ? '' : ' needs-metric'}${open ? ' open' : ''}`} key={bullet.id}>
+                        <div className="bullet-main">
+                          <span className="bullet-dot" aria-hidden="true"></span>
+                          <div className="bullet-text">
+                            {bullet.text}
+                            {own.length > 0 && (
+                              <span className="bullet-chips">
+                                {own.map(a => <span className="ach-chip" key={a.id}>{formatAchievement(a)}</span>)}
+                              </span>
+                            )}
+                          </div>
+                          <div className="bullet-side">
+                            {!ok && !open && (
+                              <button className="bullet-fix" onClick={() => openInterview(career.id, bullet)}>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" width="13" height="13"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>
+                                숫자 채우기
+                              </button>
+                            )}
+                            <button
+                              className="bullet-del"
+                              title="문장 삭제"
+                              onClick={() => { removeBullet(career.id, bullet.id); if (open) closeInterview(); refresh(); }}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        </div>
+
+                        {open && (
+                          <div className="interview-panel">
+                            <div className="iv-head">
+                              <span className="iv-avatar">난</span>
+                              <div className="iv-ask">
+                                {interview.step === 'ask' ? currentQuestion.ask : '이렇게 바꿔 둘까요?'}
+                                {interview.step === 'ask' && interview.questions.length > 1 && (
+                                  <button className="iv-swap" onClick={nextQuestion}>다른 질문으로</button>
+                                )}
+                              </div>
+                              <button className="iv-close" onClick={closeInterview} title="닫기">×</button>
+                            </div>
+
+                            {interview.step === 'ask' ? (
+                              <>
+                                <div className="iv-presets">
+                                  {METRIC_PRESETS.slice(0, 6).map(p => (
+                                    <button className="iv-preset" key={p.label} onClick={() => usePreset(p)}>{p.label}</button>
+                                  ))}
+                                </div>
+                                <div className="iv-input-row">
+                                  <input
+                                    ref={answerRef}
+                                    className="input"
+                                    placeholder={currentQuestion.hint}
+                                    value={interview.answer}
+                                    onChange={e => setInterview({ ...interview, answer: e.target.value, miss: false })}
+                                    onKeyDown={e => { if (e.key === 'Enter') submitAnswer(); if (e.key === 'Escape') closeInterview(); }}
+                                  />
+                                  <button className="btn btn-primary btn-xs" onClick={submitAnswer}>반영</button>
+                                </div>
+                                {interview.miss && (
+                                  <p className="iv-miss">숫자를 하나만 넣어 주세요. “8명”, “14일 → 2일”처럼 편하게 적으셔도 됩니다.</p>
+                                )}
+                                <p className="iv-note">모르면 건너뛰어도 괜찮아요. 나중에 면접 연습에서 다시 물어봐 드립니다.</p>
+                              </>
+                            ) : (
+                              <>
+                                <div className="iv-parsed">
+                                  <span className="ach-chip strong">{formatAchievement(interview.parsed)}</span>
+                                  <span className="iv-parsed-note">이 수치를 성과 데이터로 따로 저장해 둘게요.</span>
+                                </div>
+                                <textarea
+                                  className="textarea iv-preview"
+                                  rows={2}
+                                  value={interview.draft}
+                                  onChange={e => setInterview({ ...interview, draft: e.target.value })}
+                                />
+                                <div className="iv-actions">
+                                  <button className="btn btn-secondary btn-xs" onClick={() => setInterview({ ...interview, step: 'ask', parsed: null })}>다시 답하기</button>
+                                  <button className="btn btn-primary btn-xs" onClick={applyAchievement}>이대로 적용</button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  <div className="bullet-add">
+                    <input
+                      className="input"
+                      placeholder="+ 성과 한 줄 추가"
+                      value={newBullet[career.id] || ''}
+                      onChange={e => setNewBullet({ ...newBullet, [career.id]: e.target.value })}
+                      onKeyDown={e => { if (e.key === 'Enter') submitNewBullet(career.id); }}
+                    />
+                  </div>
                 </div>
+
+                {career.tags && career.tags.length > 0 && (
+                  <div className="exp-tags">{career.tags.map(t => <span className="tag" key={t}>{t}</span>)}</div>
+                )}
               </div>
-              <div className="exp-body">
-                <ul>
-                  <li>레거시 결제 모듈을 Spring Boot 기반으로 재작성, 트래픽 처리량 3배 증설</li>
-                  <li>코드 리뷰 체크리스트를 도입해 배포 후 장애 건수를 절반으로 감소</li>
-                </ul>
-              </div>
-              <div className="exp-tags"><span className="tag">Java</span><span className="tag">MySQL</span><span className="tag">RESTful API</span></div>
+            ))}
+          </section>
+
+          <section className="card practice-card">
+            <div className="practice-body">
+              <h2>이 경력으로 면접까지 연습해 볼까요?</h2>
+              <p>공고 요건과 제출한 서류를 그대로 읽은 면접관이 질문합니다. 여기서 나온 숫자는 다시 성과로 저장돼요.</p>
             </div>
-            <div className="exp-item">
-              <div className="exp-head">
-                <div>
-                  <div className="exp-role">주니어 백엔드 엔지니어</div>
-                  <div className="exp-company">다우기술 · 신입 온보딩 자동화 툴</div>
-                </div>
-                <div className="exp-actions">
-                  <span className="exp-period">2021.02 – 2021.12</span>
-                  <button className="btn-icon" title="삭제">{TRASH_ICON}</button>
-                </div>
-              </div>
-              <div className="exp-body">
-                <ul>
-                  <li>사내 온보딩 자동화 도구를 구축해 신규 입사자 계정 발급 시간을 단축</li>
-                </ul>
-              </div>
-              <div className="exp-tags"><span className="tag">Node.js</span><span className="tag">CI/CD</span></div>
-            </div>
+            <Link className="btn btn-primary" to="/interview">면접 연습 시작</Link>
           </section>
 
           <section className="card">
@@ -139,24 +434,10 @@ export default function Profile() {
               </div>
             </div>
           </section>
-
-          <section className="card section-gap" style={{ marginBottom: 40 }}>
-            <div className="card-head"><h2>변경 이력</h2></div>
-            <div className="history-item">
-              <div><div className="hi-what">MSA 전환 프로젝트 성과 문구 수정</div><div className="hi-when">2시간 전</div></div>
-              <a onClick={() => alert('이전 버전으로 복원합니다')}>복원</a>
-            </div>
-            <div className="history-item">
-              <div><div className="hi-what">Kafka 스킬 태그 추가</div><div className="hi-when">어제</div></div>
-              <a onClick={() => alert('이전 버전으로 복원합니다')}>복원</a>
-            </div>
-            <div className="history-item">
-              <div><div className="hi-what">이력서 파일에서 경력 3건 자동 추출</div><div className="hi-when">2026.07.10</div></div>
-              <a onClick={() => alert('이전 버전으로 복원합니다')}>복원</a>
-            </div>
-          </section>
         </div>
       </div>
+
+      <Toast show={toast.show} message={toast.message} />
     </div>
   );
 }
