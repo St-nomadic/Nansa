@@ -1,6 +1,6 @@
 .page-interview .topbar { position: sticky; top: 0; z-index: 5; background: color-mix(in oklch, var(--bg) 88%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 18px 32px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .page-interview .topbar h1 { font-size: 17px; font-weight: 600; text-align: center; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.page-interview .content { padding: 28px 32px 48px; max-width: 1180px; }
+.page-interview .content { padding: 28px 32px 48px; max-width: 1120px; }
 
 @media (max-width: 880px) {
   .page-interview .topbar { padding: 14px 20px; }
@@ -149,4 +149,3 @@
 .page-interview .cand-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 0; border-top: 1px solid var(--border-soft); }
 .page-interview .cand-text { font-size: 13.5px; color: var(--fg-2); line-height: 1.6; word-break: keep-all; }
 .page-interview .report-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
-
