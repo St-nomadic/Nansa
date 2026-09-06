@@ -77,7 +77,7 @@ export default function Profile() {
   function submitAnswer() {
     if (!interview) return;
     const question = interview.questions[interview.qIndex];
-    const parsed = parseAnswer(interview.answer, question);
+    const parsed = parseAnswer(interview.answer, question, interview.bulletText);
     if (!parsed) {
       setInterview({ ...interview, miss: true });
       return;
