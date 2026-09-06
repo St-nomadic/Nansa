@@ -343,11 +343,15 @@ export const METRIC_PRESETS = [
  * 사용자의 짧은 답변에서 수치를 뽑아 성과 구조로 만든다.
  * "14일에서 2일로" / "14일 -> 2일" / "8명" 같은 자연스러운 입력을 그대로 받는다.
  */
-export function parseAnswer(answer, question) {
+export function parseAnswer(answer, question, contextText) {
   const nums = detectNumbers(answer);
   if (!nums.length) return null;
   const isDelta = nums.length >= 2 && /→|->|=>|에서|부터|~/.test(answer);
-  const metric = (question && question.metric) || guessMetric(answer) || '성과';
+  const metric = (question && question.metric)
+    || guessMetric(answer)
+    || inferMetric(answer)
+    || inferMetric(contextText)
+    || '성과';
   if (isDelta) {
     const [a, b] = nums;
     return {
@@ -371,6 +375,15 @@ export function parseAnswer(answer, question) {
 function guessMetric(answer) {
   const hit = METRIC_PRESETS.find(p => answer.includes(p.label));
   return hit ? hit.label : '';
+}
+
+// "장애 건수를 줄였다" 같은 문장에서 지표 이름만 뽑아낸다.
+const METRIC_NOUN_RE = /([가-힣A-Za-z][가-힣A-Za-z ·]{0,4}?(건수|비율|이탈률|준수율|결함률|응답 시간|처리 시간|리드타임|처리량|점유율|만족도|주기|기간|인원|규모|매출|비용|예산|시간))/;
+
+function inferMetric(text) {
+  if (!text) return '';
+  const m = String(text).match(METRIC_NOUN_RE);
+  return m ? m[1].trim() : '';
 }
 
 /** 성과 구조를 사람이 읽는 한 줄로 (칩·미리보기용) */
@@ -406,4 +419,3 @@ export function careerContext() {
     })),
   }));
 }
-
