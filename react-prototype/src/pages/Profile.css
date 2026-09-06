@@ -15,20 +15,67 @@
 .page-profile .btn-secondary { background: var(--surface); color: var(--fg); border-color: var(--border); }
 .page-profile .btn-secondary:hover { border-color: var(--meta); }
 .page-profile .btn-xs { padding: 5px 11px; font-size: 12px; line-height: 1.2; letter-spacing: -0.015em; }
-.page-profile .btn-icon { width: 30px; height: 30px; padding: 0; justify-content: center; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); color: var(--muted); }
+.page-profile .btn-icon { width: 30px; height: 30px; padding: 0; justify-content: center; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); color: var(--muted); display: inline-flex; align-items: center; }
 .page-profile .btn-icon:hover { color: var(--danger); border-color: var(--danger); }
 .page-profile .btn-icon svg { width: 14px; height: 14px; }
 
 .page-profile .card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 16px; }
-.page-profile .card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.page-profile .card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 12px; }
 .page-profile .card-head h2 { font-size: 16px; }
 
 .page-profile .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 @media (max-width: 600px) { .page-profile .field-row { grid-template-columns: 1fr; } }
 .page-profile .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
 .page-profile .field label { font-size: 12.5px; color: var(--muted); font-weight: 500; }
-.page-profile .input { padding: 10px 13px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--fg); font-size: 14px; }
+.page-profile .input { padding: 10px 13px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--fg); font-size: 14px; width: 100%; }
 .page-profile .input:focus { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
+.page-profile .textarea { padding: 10px 13px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--fg); font-size: 14px; width: 100%; font-family: inherit; line-height: 1.6; resize: vertical; }
+.page-profile .textarea:focus { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
+.page-profile .field-hint { font-size: 12px; color: var(--meta); margin-top: 2px; }
+.page-profile .form-error { font-size: 12.5px; color: var(--danger); margin: 2px 0 10px; }
+
+/* ---------------- 정량성 점수 ---------------- */
+
+.page-profile .quant-pill { font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: var(--radius-pill); font-family: var(--font-mono); letter-spacing: -0.01em; white-space: nowrap; }
+.page-profile .quant-pill.good { background: var(--success-soft); color: var(--success); }
+.page-profile .quant-pill.mid { background: var(--warn-soft); color: #92700a; }
+.page-profile .quant-pill.low { background: var(--danger-soft); color: var(--danger); }
+
+.page-profile .quant-card { display: flex; align-items: center; gap: 22px; background: var(--surface-warm); }
+.page-profile .quant-left { flex: none; }
+.page-profile .quant-ring {
+  width: 82px; height: 82px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: conic-gradient(var(--accent) calc(var(--pct) * 1%), var(--border-soft) 0);
+  position: relative;
+}
+.page-profile .quant-card.good .quant-ring { background: conic-gradient(var(--success) calc(var(--pct) * 1%), var(--border-soft) 0); }
+.page-profile .quant-card.mid .quant-ring { background: conic-gradient(var(--warn) calc(var(--pct) * 1%), var(--border-soft) 0); }
+.page-profile .quant-card.low .quant-ring { background: conic-gradient(var(--danger) calc(var(--pct) * 1%), var(--border-soft) 0); }
+.page-profile .quant-ring::after { content: ''; position: absolute; inset: 7px; border-radius: 50%; background: var(--surface-warm); }
+.page-profile .quant-num { position: relative; z-index: 1; font-family: var(--font-mono); font-size: 21px; font-weight: 600; color: var(--fg); letter-spacing: -0.02em; }
+.page-profile .quant-num i { font-style: normal; font-size: 12px; color: var(--muted); margin-left: 1px; }
+.page-profile .quant-body h2 { font-size: 16px; margin-bottom: 6px; }
+.page-profile .quant-body p { font-size: 13.5px; color: var(--fg-2); line-height: 1.65; margin-bottom: 12px; }
+.page-profile .quant-done { font-size: 13px; color: var(--success); font-weight: 500; }
+
+@media (max-width: 600px) {
+  .page-profile .quant-card { flex-direction: column; align-items: flex-start; gap: 16px; }
+}
+
+/* ---------------- 경력 추가 폼 ---------------- */
+
+.page-profile .career-form { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--motion-base) var(--ease-standard); }
+.page-profile .career-form.open { grid-template-rows: 1fr; margin-bottom: 16px; }
+.page-profile .career-form-inner { overflow: hidden; }
+.page-profile .career-form.open .career-form-inner { border: 1px solid var(--border-soft); background: var(--surface-warm); border-radius: var(--radius-md); padding: 18px; }
+.page-profile .cf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+@media (max-width: 640px) { .page-profile .cf-grid { grid-template-columns: 1fr; } }
+.page-profile .cf-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+
+.page-profile .exp-empty { font-size: 13.5px; color: var(--muted); padding: 8px 2px; }
+
+/* ---------------- 경력 아이템 ---------------- */
 
 .page-profile .exp-item { border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px 18px; margin-bottom: 12px; }
 .page-profile .exp-item:last-child { margin-bottom: 0; }
@@ -37,11 +84,91 @@
 .page-profile .exp-company { font-size: 12.5px; color: var(--muted); margin-top: 2px; font-family: var(--font-mono); }
 .page-profile .exp-period { font-size: 12px; color: var(--muted); white-space: nowrap; }
 .page-profile .exp-body { margin-top: 10px; font-size: 13.5px; color: var(--fg-2); }
-.page-profile .exp-body ul { margin: 0; padding-left: 18px; }
-.page-profile .exp-body li { margin-bottom: 4px; }
-.page-profile .exp-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.page-profile .exp-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
 .page-profile .exp-tags .tag { font-size: 11.5px; padding: 3px 9px; border: 1px solid var(--border); border-radius: var(--radius-pill); color: var(--muted); }
-.page-profile .exp-actions { display: flex; gap: 6px; flex: none; }
+.page-profile .exp-actions { display: flex; gap: 8px; flex: none; align-items: center; }
+
+/* ---------------- 성과 문장 ---------------- */
+
+.page-profile .bullet-row { border-radius: var(--radius-sm); padding: 6px 8px; margin: 0 -8px 2px; transition: background var(--motion-fast) var(--ease-standard); }
+.page-profile .bullet-row:hover { background: var(--surface); }
+.page-profile .bullet-row.open { background: var(--surface); }
+.page-profile .bullet-row.flash { animation: bulletFlash 1.4s var(--ease-standard); }
+@keyframes bulletFlash {
+  0%, 100% { background: var(--surface); }
+  25%, 60% { background: color-mix(in oklch, var(--accent) 14%, transparent); }
+}
+.page-profile .bullet-main { display: flex; align-items: flex-start; gap: 9px; }
+.page-profile .bullet-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--border); margin-top: 9px; flex: none; }
+.page-profile .bullet-row.needs-metric .bullet-dot { background: var(--warn); box-shadow: 0 0 0 3px var(--warn-soft); }
+.page-profile .bullet-text { flex: 1; line-height: 1.65; word-break: keep-all; overflow-wrap: break-word; }
+.page-profile .bullet-chips { display: inline-flex; flex-wrap: wrap; gap: 5px; margin-left: 7px; vertical-align: middle; }
+.page-profile .ach-chip { font-family: var(--font-mono); font-size: 11px; padding: 2px 8px; border-radius: var(--radius-pill); background: var(--accent-soft); color: var(--accent); white-space: nowrap; letter-spacing: -0.01em; }
+.page-profile .ach-chip.strong { font-size: 12px; padding: 4px 11px; font-weight: 600; }
+
+.page-profile .bullet-side { display: flex; align-items: center; gap: 4px; flex: none; }
+.page-profile .bullet-fix {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11.5px; font-weight: 500; letter-spacing: -0.015em; white-space: nowrap;
+  padding: 4px 10px; border-radius: var(--radius-pill);
+  border: 1px solid color-mix(in oklch, var(--warn) 45%, transparent);
+  background: var(--warn-soft); color: #8a6a08;
+  opacity: 0.75; transition: opacity var(--motion-fast) var(--ease-standard);
+}
+.page-profile .bullet-row:hover .bullet-fix { opacity: 1; }
+.page-profile .bullet-fix:hover { background: color-mix(in oklch, var(--warn) 26%, transparent); }
+.page-profile .bullet-del { width: 20px; height: 20px; border: none; background: none; color: var(--border); font-size: 16px; line-height: 1; border-radius: 50%; opacity: 0; transition: opacity var(--motion-fast) var(--ease-standard); }
+.page-profile .bullet-row:hover .bullet-del { opacity: 1; }
+.page-profile .bullet-del:hover { color: var(--danger); background: var(--danger-soft); }
+
+.page-profile .bullet-add { margin-top: 8px; }
+.page-profile .bullet-add .input { font-size: 13px; padding: 8px 12px; border-style: dashed; background: transparent; color: var(--fg); }
+.page-profile .bullet-add .input::placeholder { color: var(--meta); }
+.page-profile .bullet-add .input:focus { border-style: solid; background: var(--bg); }
+
+/* ---------------- 성과 인터뷰 패널 ---------------- */
+
+.page-profile .interview-panel {
+  margin: 10px 0 4px 14px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in oklch, var(--accent) 26%, transparent);
+  background: var(--bg);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+  animation: ivIn var(--motion-base) var(--ease-standard);
+}
+@keyframes ivIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.page-profile .iv-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 11px; }
+.page-profile .iv-avatar { flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: var(--accent-on); font-size: 11.5px; font-weight: 700; display: grid; place-items: center; }
+.page-profile .iv-ask { flex: 1; font-size: 13.5px; color: var(--fg); line-height: 1.6; font-weight: 500; }
+.page-profile .iv-swap { margin-left: 8px; font-size: 11.5px; color: var(--accent); background: none; border: none; padding: 0; font-weight: 500; text-decoration: underline; text-underline-offset: 2px; }
+.page-profile .iv-close { flex: none; width: 22px; height: 22px; border: none; background: none; color: var(--meta); font-size: 17px; line-height: 1; border-radius: 50%; }
+.page-profile .iv-close:hover { background: var(--surface); color: var(--fg); }
+
+.page-profile .iv-presets { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 9px; }
+.page-profile .iv-preset { font-size: 11.5px; padding: 4px 10px; border-radius: var(--radius-pill); border: 1px solid var(--border); background: var(--bg); color: var(--muted); white-space: nowrap; }
+.page-profile .iv-preset:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+.page-profile .iv-input-row { display: flex; gap: 8px; align-items: center; }
+.page-profile .iv-input-row .input { flex: 1; font-size: 13.5px; }
+.page-profile .iv-miss { font-size: 12px; color: var(--danger); margin-top: 7px; }
+.page-profile .iv-note { font-size: 11.5px; color: var(--meta); margin-top: 8px; }
+
+.page-profile .iv-parsed { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin-bottom: 10px; }
+.page-profile .iv-parsed-note { font-size: 12px; color: var(--muted); }
+.page-profile .iv-preview { font-size: 13.5px; }
+.page-profile .iv-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+
+/* ---------------- 면접 연습 유도 ---------------- */
+
+.page-profile .practice-card { display: flex; align-items: center; justify-content: space-between; gap: 18px; background: var(--surface-warm); }
+.page-profile .practice-body h2 { font-size: 16px; margin-bottom: 5px; }
+.page-profile .practice-body p { font-size: 13.5px; color: var(--fg-2); line-height: 1.65; }
+@media (max-width: 640px) {
+  .page-profile .practice-card { flex-direction: column; align-items: flex-start; }
+}
+
+/* ---------------- 스킬 · 임포트 ---------------- */
 
 .page-profile .skill-group { margin-bottom: 16px; }
 .page-profile .skill-group:last-child { margin-bottom: 0; }
