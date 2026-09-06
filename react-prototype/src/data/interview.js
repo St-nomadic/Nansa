@@ -136,6 +136,10 @@ const RESULT_RE = /(결과|그래서|덕분에|개선|달성|줄|늘|단축|절�
 const NUM_RE = /\d/;
 
 const NEEDS_NUMBER = ['req', 'achievement', 'duty', 'impact', 'plus'];
+// 마무리·역질문 성격의 문항은 되묻지 않는다 (기계처럼 보인다)
+const NO_FOLLOWUP = ['closing'];
+// "본인 역할" 되묻기가 자연스러운 문항만
+const ROLE_MATTERS = ['req', 'achievement', 'collab', 'decision', 'failure', 'opening'];
 
 export function evaluateAnswer(answer, question) {
   const text = (answer || '').trim();
@@ -160,11 +164,13 @@ export function evaluateAnswer(answer, question) {
   if (len < 30) tags.push({ label: '너무 짧음', tone: 'warn' });
 
   let followUp = null;
-  if (len < 25) {
+  if (NO_FOLLOWUP.includes(question.kind)) {
+    followUp = null;
+  } else if (len < 25) {
     followUp = '답변이 조금 짧네요. 어떤 상황이었고, 본인이 무엇을 했고, 결과가 어땠는지 순서대로 다시 말씀해 주시겠어요?';
   } else if (!hasNumber && NEEDS_NUMBER.includes(question.kind)) {
     followUp = '좋습니다. 그런데 규모가 잘 안 그려지네요. 인원·기간·건수·비율 무엇이든 좋으니 숫자를 하나만 붙여서 다시 말씀해 주세요.';
-  } else if (!hasRole) {
+  } else if (!hasRole && ROLE_MATTERS.includes(question.kind)) {
     followUp = '팀이 한 일 말고, 그 안에서 본인이 직접 판단하고 실행한 부분만 짚어주실 수 있을까요?';
   }
 
@@ -196,7 +202,7 @@ export function buildReport(job, plan, turns) {
   const candidates = [];
   answered.forEach(t => {
     if (!t.evaluation || !t.evaluation.hasNumber) return;
-    const sentences = t.text.split(/[.。\n]/).map(s => s.trim()).filter(s => s && /\d/.test(s));
+    const sentences = t.text.split(/[。\n]|\.(?!\d)/).map(s => s.trim()).filter(s => s && /\d/.test(s));
     sentences.slice(0, 1).forEach(s => {
       if (candidates.length < 5 && !candidates.some(c => c.text === s)) {
         candidates.push({ text: s.length > 90 ? s.slice(0, 90) + '…' : s, question: t.questionText || '' });
@@ -262,4 +268,3 @@ export function interviewReadiness(jobId) {
     avgCoverage: docs.length ? Math.round(docs.reduce((s, d) => s + coverageOf(d), 0) / docs.length) : 0,
   };
 }
-
