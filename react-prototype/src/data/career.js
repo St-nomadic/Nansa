@@ -353,7 +353,18 @@ export function parseAnswer(answer, question, contextText) {
     || inferMetric(contextText)
     || '성과';
   if (isDelta) {
-    const [a, b] = nums;
+    // "8개 서비스를 분리했고, 배포 주기를 14일에서 2일로" 처럼 숫자가 셋 이상일 때
+    // 앞의 두 개를 집으면 안 된다. 전환 표시(에서/→) 바로 앞뒤 숫자를 짝으로 삼는다.
+    const marker = answer.match(/→|->|=>|에서|부터/);
+    let a = null;
+    let b = null;
+    if (marker && marker.index != null) {
+      const before = nums.filter(n => n.index < marker.index);
+      const after = nums.filter(n => n.index >= marker.index);
+      a = before[before.length - 1] || null;
+      b = after[0] || null;
+    }
+    if (!a || !b) { a = nums[0]; b = nums[1]; }
     return {
       kind: 'delta',
       metric,
