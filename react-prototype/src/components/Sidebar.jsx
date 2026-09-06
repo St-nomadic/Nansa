@@ -17,6 +17,10 @@ export default function Sidebar({ active, onMyPage = false }) {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
           프로필·경력
         </Link>
+        <Link to="/interview" className={active === 'interview' ? 'active' : ''}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 12a8 8 0 1 1-3.1-6.3"/><path d="M8 10.5h.01M12 10.5h.01M16 10.5h.01"/><path d="M7 20l-2.5 2v-4"/></svg>
+          면접 연습
+        </Link>
         <Link to="/applications" className={active === 'applications' ? 'active' : ''}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-9"/><path d="M9 3h6v4H9zM13 13l6-6M13 7h6v6"/></svg>
           지원 관리
