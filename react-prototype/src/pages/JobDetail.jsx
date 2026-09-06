@@ -188,6 +188,24 @@ export default function JobDetail() {
             )}
           </section>
 
+          <section style={{ marginBottom: 32 }}>
+            <h2 style={{ fontSize: 18, marginBottom: 14 }}>면접까지 연습하기</h2>
+            <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 18, flexWrap: 'wrap' }}>
+              <div style={{ minWidth: 240, flex: 1 }}>
+                <h3 style={{ fontSize: 15, marginBottom: 5 }}>이 공고 요건과 제출 서류로 모의 면접</h3>
+                <p style={{ fontSize: 13.5, color: 'var(--fg-2)', lineHeight: 1.65 }}>
+                  면접관이 자격 요건과 서류에 적힌 수치를 그대로 짚어 질문해요.
+                  답변에서 나온 숫자는 프로필 성과로 다시 저장됩니다.
+                </p>
+              </div>
+              {analyzed ? (
+                <Link className="btn btn-primary" to={`/interview?job=${job.id}`}>면접 연습 시작</Link>
+              ) : (
+                <span style={{ fontSize: 13, color: 'var(--muted)' }}>JD 분석 후 이용할 수 있어요</span>
+              )}
+            </div>
+          </section>
+
           <section style={{ marginBottom: 40 }}>
             <h2 style={{ fontSize: 18, marginBottom: 14 }}>이미 만든 서류</h2>
             {docs.length ? docs.map(doc => (
