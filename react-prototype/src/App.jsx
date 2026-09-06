@@ -8,6 +8,7 @@ const JobDetail = lazy(() => import('./pages/JobDetail.jsx'));
 const DocumentGenerator = lazy(() => import('./pages/DocumentGenerator.jsx'));
 const DocumentEditor = lazy(() => import('./pages/DocumentEditor.jsx'));
 const Profile = lazy(() => import('./pages/Profile.jsx'));
+const InterviewChat = lazy(() => import('./pages/InterviewChat.jsx'));
 const Applications = lazy(() => import('./pages/Applications.jsx'));
 const MyPage = lazy(() => import('./pages/MyPage.jsx'));
 const NotFound = lazy(() => import('./pages/NotFound.jsx'));
@@ -23,6 +24,7 @@ export default function App() {
         <Route path="/generate" element={<DocumentGenerator />} />
         <Route path="/editor" element={<DocumentEditor />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/interview" element={<InterviewChat />} />
         <Route path="/applications" element={<Applications />} />
         <Route path="/me" element={<MyPage />} />
         <Route path="*" element={<NotFound />} />
