@@ -383,7 +383,12 @@ const METRIC_NOUN_RE = /([가-힣A-Za-z][가-힣A-Za-z ·]{0,4}?(건수|비율|�
 function inferMetric(text) {
   if (!text) return '';
   const m = String(text).match(METRIC_NOUN_RE);
-  return m ? m[1].trim() : '';
+  if (!m) return '';
+  // "배포 후 장애 건수" 처럼 앞에 붙는 조사·부사 토막을 떼어낸다
+  const parts = m[1].trim().split(/\s+/);
+  while (parts.length > 1 && parts[0].length < 2) parts.shift();
+  if (parts.length > 2) parts.splice(0, parts.length - 2);
+  return parts.join(' ');
 }
 
 /** 성과 구조를 사람이 읽는 한 줄로 (칩·미리보기용) */
