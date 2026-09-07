@@ -21,12 +21,17 @@ export default function JobPostings() {
   const [text, setText] = useState('');
   const [file, setFile] = useState(null);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [fallback, setFallback] = useState(false);
+  const submitting = useRef(false);
   const [jobs, setJobs] = useState(() => getJobs());
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
   const { toast, showToast } = useToast();
 
   function switchTab(next) {
+    if (submitting.current) return;
+    setFallback(false);
     setTab(next);
     setError('');
   }
@@ -62,7 +67,8 @@ export default function JobPostings() {
     return '';
   }
 
-  function submit() {
+  async function submit() {
+    if (submitting.current) return;
     const message = validate();
     if (message) {
       setError(message);
@@ -71,21 +77,35 @@ export default function JobPostings() {
 
     let payload;
     if (tab === 'url') {
-      const host = hostOf(url.trim());
-      payload = {
-        company: host || '직접 등록한 공고',
-        companyEn: host,
-        title: '분석 대기 중인 공고',
-        source: { kind: 'url', value: url.trim() },
-        rawJd: null,
-      };
+      submitting.current = true;
+      setLoading(true);
+      setError('');
+      setFallback(false);
+      try {
+        const response = await fetch('/api/import-job', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: url.trim() }), signal: AbortSignal.timeout(18000),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || '공고를 가져오지 못했어요.');
+        const parsed = analyzeJdText(result.rawJd);
+        if (!parsed) throw new Error('분석할 본문이 부족해요. 공고 본문을 직접 붙여넣어 주세요.');
+        payload = { ...result, source: { kind: 'url', value: url.trim() }, ...parsed };
+      } catch (err) {
+        setError(err.name === 'TimeoutError' ? '응답이 늦어요. 다시 시도하거나 본문을 직접 붙여넣어 주세요.' : err.message.includes('JSON') ? '공고를 가져오지 못했어요. 본문을 직접 붙여넣어 주세요.' : err.message);
+        setFallback(true);
+        return;
+      } finally {
+        submitting.current = false;
+        setLoading(false);
+      }
     } else if (tab === 'text') {
       const parsed = analyzeJdText(text);
       const firstLine = text.trim().split('\n').find(l => l.trim() && !/^\[/.test(l.trim())) || '붙여넣은 공고';
       payload = {
-        company: '직접 등록한 공고',
+        company: fallback ? hostOf(url) : '직접 등록한 공고',
         title: firstLine.trim().slice(0, 40),
-        source: { kind: 'text', value: '본문 직접 입력' },
+        source: fallback ? { kind: 'url', value: url.trim() } : { kind: 'text', value: '본문 직접 입력' },
         rawJd: text.trim(),
         analysis: parsed ? parsed.analysis : null,
         keywords: parsed ? parsed.keywords : [],
@@ -126,9 +146,9 @@ export default function JobPostings() {
               </div>
             </div>
             <div className="tabs" role="tablist">
-              <button className={`tab-btn${tab === 'url' ? ' active' : ''}`} onClick={() => switchTab('url')}>URL</button>
-              <button className={`tab-btn${tab === 'text' ? ' active' : ''}`} onClick={() => switchTab('text')}>텍스트</button>
-              <button className={`tab-btn${tab === 'pdf' ? ' active' : ''}`} onClick={() => switchTab('pdf')}>PDF 업로드</button>
+              <button disabled={loading} className={`tab-btn${tab === 'url' ? ' active' : ''}`} onClick={() => switchTab('url')}>URL</button>
+              <button disabled={loading} className={`tab-btn${tab === 'text' ? ' active' : ''}`} onClick={() => switchTab('text')}>텍스트</button>
+              <button disabled={loading} className={`tab-btn${tab === 'pdf' ? ' active' : ''}`} onClick={() => switchTab('pdf')}>PDF 업로드</button>
             </div>
 
             <div className={`tab-panel${tab === 'url' ? ' active' : ''}`}>
@@ -136,6 +156,7 @@ export default function JobPostings() {
                 <label htmlFor="job-url">공고 URL</label>
                 <input
                   className={`input${error && tab === 'url' ? ' has-error' : ''}`}
+                  disabled={loading}
                   id="job-url"
                   type="url"
                   value={url}
@@ -149,6 +170,7 @@ export default function JobPostings() {
             <div className={`tab-panel${tab === 'text' ? ' active' : ''}`}>
               <div className="field">
                 <label htmlFor="job-text">공고 본문 붙여넣기</label>
+                {fallback && <p className="field-hint">입력한 공고 URL과 함께 저장합니다. 공고 본문을 복사해 붙여넣어 주세요.</p>}
                 <textarea
                   className={`textarea${error && tab === 'text' ? ' has-error' : ''}`}
                   id="job-text"
@@ -187,7 +209,8 @@ export default function JobPostings() {
             {error && <p className="form-error" role="alert">{error}</p>}
 
             <div className="new-post-foot">
-              <button className="btn btn-primary" onClick={submit}>등록하고 분석하기</button>
+              <button className="btn btn-primary" disabled={loading} aria-busy={loading} onClick={submit}>{loading ? '공고를 가져와 분석하는 중…' : '등록하고 분석하기'}</button>
+              {fallback && tab === 'url' && <button className="btn btn-secondary" onClick={() => { setTab('text'); setError(''); }}>본문 직접 붙여넣기</button>}
             </div>
           </section>
 
