@@ -1,34 +1,31 @@
-import { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 
-const Landing = lazy(() => import('./pages/Landing.jsx'));
-const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
-const JobPostings = lazy(() => import('./pages/JobPostings.jsx'));
-const JobDetail = lazy(() => import('./pages/JobDetail.jsx'));
-const DocumentGenerator = lazy(() => import('./pages/DocumentGenerator.jsx'));
-const DocumentEditor = lazy(() => import('./pages/DocumentEditor.jsx'));
-const Profile = lazy(() => import('./pages/Profile.jsx'));
-const InterviewChat = lazy(() => import('./pages/InterviewChat.jsx'));
-const Applications = lazy(() => import('./pages/Applications.jsx'));
-const MyPage = lazy(() => import('./pages/MyPage.jsx'));
-const NotFound = lazy(() => import('./pages/NotFound.jsx'));
+import Landing from './pages/Landing.jsx';
+import Dashboard from './pages/Dashboard.jsx';
+import JobPostings from './pages/JobPostings.jsx';
+import JobDetail from './pages/JobDetail.jsx';
+import DocumentGenerator from './pages/DocumentGenerator.jsx';
+import DocumentEditor from './pages/DocumentEditor.jsx';
+import Profile from './pages/Profile.jsx';
+import InterviewChat from './pages/InterviewChat.jsx';
+import Applications from './pages/Applications.jsx';
+import MyPage from './pages/MyPage.jsx';
+import NotFound from './pages/NotFound.jsx';
 
 export default function App() {
   return (
-    <Suspense fallback={<div style={{ padding: 40, color: '#86868b', fontSize: 14 }}>불러오는 중…</div>}>
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/jobs" element={<JobPostings />} />
-        <Route path="/jobs/:jobId" element={<JobDetail />} />
-        <Route path="/generate" element={<DocumentGenerator />} />
-        <Route path="/editor" element={<DocumentEditor />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/interview" element={<InterviewChat />} />
-        <Route path="/applications" element={<Applications />} />
-        <Route path="/me" element={<MyPage />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </Suspense>
+    <Routes>
+      <Route path="/" element={<Landing />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/jobs" element={<JobPostings />} />
+      <Route path="/jobs/:jobId" element={<JobDetail />} />
+      <Route path="/generate" element={<DocumentGenerator />} />
+      <Route path="/editor" element={<DocumentEditor />} />
+      <Route path="/profile" element={<Profile />} />
+      <Route path="/interview" element={<InterviewChat />} />
+      <Route path="/applications" element={<Applications />} />
+      <Route path="/me" element={<MyPage />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 }
