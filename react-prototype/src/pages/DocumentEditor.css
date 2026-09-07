@@ -94,3 +94,50 @@
 .page-editor .history-undo { background: none; border: none; padding: 0; font: inherit; font-size: 12px; color: var(--accent); cursor: pointer; white-space: nowrap; }
 .page-editor .history-undo:hover { text-decoration: underline; }
 .page-editor .history-undo:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 4px; }
+
+/* ---------------- 실제 본문 렌더 ---------------- */
+
+.page-editor .legacy-note, .page-editor .gap-note {
+  max-width: 1240px; margin: 0 auto 16px; padding: 12px 16px;
+  border-radius: var(--radius-md); font-size: 13px; line-height: 1.65; word-break: keep-all;
+}
+.page-editor .legacy-note { background: var(--surface); color: var(--muted); border: 1px solid var(--border-soft); }
+.page-editor .gap-note { background: var(--warn-soft); color: #7a5d07; border: 1px solid color-mix(in oklch, var(--warn) 42%, transparent); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.page-editor .gap-note code { font-family: var(--font-mono); font-size: 11.5px; background: var(--bg); padding: 1px 5px; border-radius: 4px; }
+.page-editor .gap-note a { color: var(--accent); font-weight: 600; font-size: 12.5px; white-space: nowrap; }
+.page-editor .gap-note a:hover { text-decoration: underline; }
+
+.page-editor .editable + .editable { margin-top: 2px; }
+.page-editor .editable.needs { background: var(--warn-soft); box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--warn) 40%, transparent); }
+.page-editor .editable.needs:focus { background: var(--accent-soft); }
+
+.page-editor .proj-title { font-size: 14px; font-weight: 600; margin: 16px 0 6px; padding-top: 14px; border-top: 1px solid var(--border-soft); }
+.page-editor .card > .proj-title:first-of-type { margin-top: 0; padding-top: 0; border-top: none; }
+
+.page-editor .sec-metrics { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-soft); }
+.page-editor .metric-chip { font-family: var(--font-mono); font-size: 11px; padding: 3px 9px; border-radius: var(--radius-pill); background: var(--accent-soft); color: var(--accent); }
+
+.page-editor .tool-target { width: 100%; margin-bottom: 10px; padding: 8px 11px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--fg); font-size: 13px; font-family: inherit; }
+.page-editor .tool-target:focus { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
+.page-editor .tool-note { font-size: 11.5px; color: var(--muted); line-height: 1.6; margin-top: 10px; word-break: keep-all; }
+.page-editor .tool-note a { color: var(--accent); font-weight: 600; }
+
+.page-editor .coverage-bar-fill.quant { background: var(--success); }
+.page-editor .evidence-item .ev-metric { display: inline-block; margin-top: 6px; font-family: var(--font-mono); font-size: 10.5px; padding: 2px 8px; border-radius: var(--radius-pill); background: var(--accent-soft); color: var(--accent); }
+
+/* ---------------- 인쇄 (PDF 내보내기) ---------------- */
+
+@media print {
+  .sidebar, .page-editor .topbar, .page-editor aside, .no-print,
+  .page-editor .legacy-note, .page-editor .gap-note { display: none !important; }
+  .app-shell, .page-editor .main { display: block !important; margin: 0 !important; }
+  .page-editor .content { padding: 0 !important; }
+  .page-editor .editor-grid { display: block !important; max-width: none !important; }
+  .page-editor .card { border: none !important; padding: 0 0 18px !important; margin: 0 0 18px !important; break-inside: avoid; }
+  .page-editor .card-head .card-sub { display: none !important; }
+  .page-editor .card-head h2 { font-size: 13pt; }
+  .page-editor .editable { padding: 0 !important; margin: 0 0 6px !important; font-size: 10.5pt; color: #000 !important; background: none !important; box-shadow: none !important; }
+  .page-editor .editable.needs { background: none !important; box-shadow: none !important; }
+  .page-editor .metric-chip { border: 1px solid #999; background: none !important; color: #000 !important; }
+  @page { margin: 16mm; }
+}
