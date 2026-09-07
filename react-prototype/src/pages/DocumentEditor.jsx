@@ -75,8 +75,9 @@ export default function DocumentEditor() {
     () => sections.reduce((acc, s) => acc + ' ' + s.blocks.map(b => b.text).join(' '), ''),
     [sections],
   );
+  const needsFix = b => b.source !== 'heading' && (b.needsMetric || /\[수치 필요\]|\[근거 필요\]/.test(b.text)) && !/\d/.test(b.text);
   const gapCount = useMemo(
-    () => sections.reduce((n, s) => n + s.blocks.filter(b => /\[수치 필요\]|\[근거 필요\]/.test(b.text)).length, 0),
+    () => sections.reduce((n, s) => n + s.blocks.filter(needsFix).length, 0),
     [sections],
   );
   const metricBlocks = useMemo(() => {
@@ -258,7 +259,7 @@ export default function DocumentEditor() {
                     ) : (
                       <div
                         key={section.key + i}
-                        className={`editable${/\[수치 필요\]|\[근거 필요\]/.test(b.text) ? ' needs' : ''}`}
+                        className={`editable${needsFix(b) ? ' needs' : ''}`}
                         contentEditable
                         suppressContentEditableWarning
                         onFocus={() => setTarget(section.key)}
@@ -268,6 +269,9 @@ export default function DocumentEditor() {
                       </div>
                     )
                   ))}
+                  {section.blocks.some(needsFix) && (
+                    <p className="need-hint">표시된 문장에 숫자가 없어요. 면접에서 바로 되물리는 자리입니다.</p>
+                  )}
                   {section.blocks.some(b => b.metric) && (
                     <div className="sec-metrics">
                       {[...new Set(section.blocks.filter(b => b.metric).map(b => b.metric))].map(m => (
@@ -297,7 +301,7 @@ export default function DocumentEditor() {
             <aside className="no-print">
               <div className="side-card">
                 <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 3l1.8 4.4L18 9l-4.2 1.6L12 15l-1.8-4.4L6 9l4.2-1.6z"/></svg>AI 보정</h3>
-                <select className="tool-target" value={target} onChange={e => setTarget(e.target.value)}>
+                <select className="tool-target" aria-label="보정할 섹션" value={target} onChange={e => setTarget(e.target.value)}>
                   {sections.map(s => <option key={s.key} value={s.key}>{s.title}</option>)}
                 </select>
                 <div className="ai-tools">
