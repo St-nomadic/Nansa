@@ -13,7 +13,7 @@ export default function Landing() {
     <div className="page-landing">
       <header className="topnav">
         <div className="container topnav-inner">
-          <Link to="/" className="logo">Nansa</Link>
+          <Link to="/" className="logo"><span className="dot" aria-hidden="true"></span>Nansa</Link>
           <nav>
             <a href="#features">기능</a>
             <a href="#how">작동 방식</a>
