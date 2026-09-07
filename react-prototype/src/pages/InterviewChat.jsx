@@ -12,7 +12,6 @@ import {
   evaluateAnswer,
   getPersona,
   keywordSplit,
-  reaction,
   saveSession,
 } from '../data/interview.js';
 import { addAchievement, addBullet, getCareers, parseAnswer } from '../data/career.js';
@@ -104,13 +103,13 @@ export default function InterviewChat() {
       }
       const nextIdx = idx + 1;
       if (nextIdx >= plan.length) {
-        setTurns(t => [...t, { role: 'ai', reaction: reaction(evaluation), text: '여기까지 하겠습니다. 오늘 답변 정리해서 보여드릴게요.', kind: 'end' }]);
+        setTurns(t => [...t, { role: 'ai', text: '여기까지 하겠습니다. 오늘 답변 정리해서 보여드릴게요.', kind: 'end' }]);
         window.setTimeout(() => finish(), 500);
         return;
       }
       setIdx(nextIdx);
       setFollowUpUsed(false);
-      setTurns(t => [...t, { role: 'ai', reaction: reaction(evaluation), text: plan[nextIdx].text, kind: plan[nextIdx].kind }]);
+      setTurns(t => [...t, { role: 'ai', text: plan[nextIdx].text, kind: plan[nextIdx].kind }]);
     }, 620);
   }
 
@@ -256,7 +255,6 @@ export default function InterviewChat() {
                       <div className="msg ai" key={i}>
                         <span className="msg-avatar">{persona.initial}</span>
                         <div className="msg-body">
-                          {t.reaction && <div className="msg-reaction">{t.reaction}</div>}
                           <div className={`bubble${t.isFollowUp ? ' follow' : ''}`}>{t.text}</div>
                           {t.isFollowUp && <div className="msg-note">꼬리 질문</div>}
                         </div>
