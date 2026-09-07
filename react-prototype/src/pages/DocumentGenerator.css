@@ -101,3 +101,42 @@
 
 .page-generator .result-block { margin-bottom: 26px; }
 .page-generator .result-block:last-of-type { margin-bottom: 8px; }
+
+/* ---------------- 근거 점검 (Step 3) ---------------- */
+
+.page-generator .lbl-note { font-size: 11.5px; font-weight: 400; color: var(--meta); margin-left: 6px; }
+.page-generator .chip-opt:disabled { opacity: 0.4; cursor: not-allowed; }
+.page-generator .tag-opt { display: inline-flex; align-items: center; gap: 7px; }
+.page-generator .tag-hit { font-family: var(--font-mono); font-size: 10.5px; padding: 1px 6px; border-radius: var(--radius-pill); background: var(--surface); color: var(--meta); }
+.page-generator .tag-opt.active .tag-hit { background: var(--bg); color: var(--accent); }
+
+.page-generator .quant-gate { border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px 18px; margin-bottom: 24px; background: var(--surface-warm); }
+.page-generator .quant-gate.good { border-color: color-mix(in oklch, var(--success) 40%, transparent); }
+.page-generator .quant-gate.mid { border-color: color-mix(in oklch, var(--warn) 45%, transparent); }
+.page-generator .quant-gate.low { border-color: color-mix(in oklch, var(--danger) 40%, transparent); }
+.page-generator .qg-head { display: flex; align-items: baseline; gap: 9px; margin-bottom: 7px; }
+.page-generator .qg-score { font-size: 15px; font-weight: 600; font-family: var(--font-mono); letter-spacing: -0.02em; }
+.page-generator .quant-gate.good .qg-score { color: var(--success); }
+.page-generator .quant-gate.mid .qg-score { color: #92700a; }
+.page-generator .quant-gate.low .qg-score { color: var(--danger); }
+.page-generator .qg-label { font-size: 12.5px; color: var(--muted); }
+.page-generator .qg-desc { font-size: 13px; color: var(--fg-2); line-height: 1.7; word-break: keep-all; }
+.page-generator .qg-desc code, .page-generator .rc-gap code { font-family: var(--font-mono); font-size: 11.5px; background: var(--warn-soft); color: #8a6a08; padding: 1px 5px; border-radius: 4px; }
+.page-generator .qg-list { margin: 10px 0 0; padding-left: 17px; display: flex; flex-direction: column; gap: 5px; }
+.page-generator .qg-list li { font-size: 12.5px; color: var(--muted); line-height: 1.55; word-break: keep-all; }
+.page-generator .qg-list li::marker { color: var(--warn); }
+.page-generator .qg-list .qg-more { list-style: none; margin-left: -17px; color: var(--meta); }
+.page-generator .qg-cta { margin-top: 13px; padding: 7px 14px; font-size: 12.5px; }
+
+/* ---------------- 결과 카드 ---------------- */
+
+.page-generator .rc-title { font-size: 13px; font-weight: 600; color: var(--fg-2); margin-bottom: 14px; }
+.page-generator .rc-metric { margin-bottom: 14px; }
+.page-generator .rc-metric:last-of-type { margin-bottom: 0; }
+.page-generator .rc-metric-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12.5px; color: var(--muted); }
+.page-generator .rc-metric-head .num { font-family: var(--font-mono); font-size: 13px; color: var(--fg); }
+.page-generator .coverage-bar-fill.quant { background: var(--success); }
+.page-generator .rc-gap { margin-top: 14px; font-size: 12.5px; color: var(--muted); line-height: 1.6; word-break: keep-all; }
+.page-generator .mp-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+.page-generator .match-point .mp-source { margin-top: 0; }
+.page-generator .mp-metric { font-family: var(--font-mono); font-size: 11px; padding: 2px 8px; border-radius: var(--radius-pill); background: var(--accent-soft); color: var(--accent); }
