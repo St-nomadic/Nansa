@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import Sidebar from '../components/Sidebar.jsx';
+import LogoutButton from '../components/LogoutButton.jsx';
 import Crumb from '../components/Crumb.jsx';
 import Toast from '../components/Toast.jsx';
 import useToast from '../hooks/useToast.js';
@@ -157,6 +158,9 @@ export default function MyPage() {
               <div className="upload-row"><div className="ur-label">🚀 사이드 프로젝트 런칭 준비</div><div className="ur-sub">6/28 – 7/05</div></div>
             </div>
           </section>
+          <div className="logout-footer">
+            <LogoutButton className="btn btn-secondary" />
+          </div>
         </div>
       </div>
 

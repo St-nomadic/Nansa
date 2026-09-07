@@ -54,3 +54,7 @@
 
 .crumb { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; white-space: nowrap; flex: none; }
 .crumb:hover { color: var(--fg); }
+
+.user-flyout .logout-menu { width: 100%; background: transparent; border: 0; font-family: inherit; text-align: left; cursor: pointer; }
+.user-flyout .logout-menu:hover { background: var(--surface); }
+.user-flyout .logout-menu:focus-visible { outline: 2px solid var(--accent); }

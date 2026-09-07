@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import LogoutButton from './LogoutButton.jsx';
 
 export default function Sidebar({ active, onMyPage = false }) {
   return (
@@ -44,6 +45,7 @@ export default function Sidebar({ active, onMyPage = false }) {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
             프로필·경력 편집하기
           </Link>
+          <LogoutButton className="uf-item logout-menu" />
         </div>
       </div>
     </aside>

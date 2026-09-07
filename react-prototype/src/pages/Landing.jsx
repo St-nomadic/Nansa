@@ -1,8 +1,11 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import './Landing.css';
+import { startSession } from '../data/session.js';
 
 export default function Landing() {
   const navigate = useNavigate();
+  const location = useLocation();
+  function start() { startSession(); navigate('/dashboard'); }
 
   function scrollToHow() {
     const el = document.getElementById('how');
@@ -18,18 +21,19 @@ export default function Landing() {
             <a href="#features">기능</a>
             <a href="#how">작동 방식</a>
           </nav>
-          <button className="btn btn-primary" onClick={() => navigate('/dashboard')}>시작하기</button>
+          <button className="btn btn-primary" onClick={start}>시작하기</button>
         </div>
       </header>
 
       <main id="content">
+        {location.state?.loggedOut && <p className="logout-notice" role="status">로그아웃되었습니다.</p>}
         <section className="section hero">
           <div className="container hero-center">
             <p className="eyebrow">AI 지원 서류 자동화</p>
             <h1>채용공고에 맞춰<br />스스로 완성되는 서류</h1>
             <p className="lead">공고 링크나 텍스트를 등록하면 Nansa가 요건을 분석하고 내 경력 데이터와 매칭해 이력서·자기소개서·포트폴리오를 만들어 드립니다.</p>
             <div className="hero-cta">
-              <button className="btn btn-primary" onClick={() => navigate('/dashboard')}>무료로 시작하기</button>
+              <button className="btn btn-primary" onClick={start}>무료로 시작하기</button>
               <button className="btn btn-secondary" onClick={scrollToHow}>작동 방식 보기</button>
             </div>
           </div>
@@ -125,7 +129,7 @@ export default function Landing() {
           <div className="container" style={{ maxWidth: 600 }}>
             <h2>다음 지원, 서류부터 다시 준비하지 마세요</h2>
             <p className="lead" style={{ margin: '16px auto 32px' }}>공고를 등록하고 첫 맞춤 서류를 만들어보세요.</p>
-            <button className="btn btn-primary" onClick={() => navigate('/dashboard')}>무료로 시작하기</button>
+            <button className="btn btn-primary" onClick={start}>무료로 시작하기</button>
           </div>
         </section>
       </main>
