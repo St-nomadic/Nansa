@@ -217,6 +217,21 @@ export function addDocument(doc) {
   return next;
 }
 
+/**
+ * 저장된 문서를 갱신한다. (편집기에서 본문을 고쳤을 때)
+ * 시드 문서(BASE_DOCS)는 상수라 저장되지 않고 화면 상태로만 남는다.
+ */
+export function updateDocument(id, patch) {
+  const custom = read(DOC_KEY);
+  const idx = custom.findIndex(d => d.id === id);
+  if (idx === -1) return null;
+  const next = { ...custom[idx], ...patch, updatedAt: todayISO() };
+  const list = [...custom];
+  list[idx] = next;
+  write(DOC_KEY, list);
+  return next;
+}
+
 export function resetLocal() {
   write(JOB_KEY, []);
   write(DOC_KEY, []);
