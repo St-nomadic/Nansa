@@ -8,6 +8,8 @@ import {
   addDocument,
   getJob,
 } from '../data/nansa.js';
+import { getCareers, quantScore, scoreLabel } from '../data/career.js';
+import { composeDocument, rankCareers } from '../data/compose.js';
 import './DocumentGenerator.css';
 
 const TYPES = [
@@ -19,35 +21,18 @@ const TYPES = [
 const STEPS = [
   { n: 1, label: '서류 유형' },
   { n: 2, label: '섹션 선택' },
-  { n: 3, label: '생성 설정' },
+  { n: 3, label: '근거 점검' },
   { n: 4, label: '생성 결과' },
 ];
 
 const TYPE_ORDER = ['resume', 'cover-letter', 'portfolio'];
 
-const MATCH_POINTS = {
-  resume: [
-    { text: 'MSA 환경에서 주문·결제 서비스를 분리하며 서비스 간 트래픽을 30% 절감한 경험이 있습니다.', source: 'MSA 전환 프로젝트 (2024)' },
-    { text: 'Spring Boot 기반 결제 API를 설계하고 코드 리뷰 프로세스를 정착시켰습니다.', source: '커머스 결제 시스템 리팩토링' },
-  ],
-  'cover-letter': [
-    { text: '레거시 결제 모듈을 재작성하며, 장애를 줄이는 일이 곧 사용자 신뢰를 쌓는 일이라는 걸 배웠습니다.', source: '커머스 결제 시스템 리팩토링' },
-    { text: '배포 주기를 2주에서 2일로 줄이며 팀 전체의 실험 속도를 끌어올린 경험이 있습니다.', source: 'MSA 전환 프로젝트 (2024)' },
-  ],
-  portfolio: [
-    { text: '프로젝트별로 담당 범위 · 기술 선택 이유 · 정량 성과를 한 장으로 정리했습니다.', source: '대표 프로젝트 2건 선별' },
-    { text: '트래픽 처리량 3배 증설, 평균 응답 시간 120ms 개선 등 수치 중심으로 서술했습니다.', source: '성과 지표 섹션' },
-  ],
-};
-
-const BASE_COVERAGE = { resume: 89, 'cover-letter': 84, portfolio: 78 };
-
 function genStepsFor(typeKey) {
   return [
     'JD 요건 분석 반영',
     '경력 데이터 매칭',
-    DOC_LABEL[typeKey] + ' 문장 생성 및 근거 정리',
-    '키워드 커버리지 점검',
+    '정량 성과 근거 연결',
+    DOC_LABEL[typeKey] + ' 문장 조립',
   ];
 }
 
@@ -66,20 +51,30 @@ export default function DocumentGenerator() {
   const [tone, setTone] = useState('표준');
   const [length, setLength] = useState('보통');
   const [lang, setLang] = useState('한국어');
-  const [highlighted, setHighlighted] = useState(new Set(['커머스 결제 시스템 리팩토링', 'MSA 전환 프로젝트']));
 
-  // 선택한 서류를 하나씩 순차 생성
+  const careers = useMemo(() => getCareers(), []);
+  const ranked = useMemo(() => (job ? rankCareers(job, careers) : []), [job, careers]);
+  const quant = useMemo(() => quantScore(), [step]);
+  const quantTone = scoreLabel(quant.score);
+
+  // 기본값: JD 적합도 상위 2개 경력을 강조
+  const [highlighted, setHighlighted] = useState(() => new Set());
+  useEffect(() => {
+    if (highlighted.size === 0 && ranked.length) {
+      setHighlighted(new Set(ranked.slice(0, 2).map(r => r.career.id)));
+    }
+  }, [ranked]);
+
   const [queueIndex, setQueueIndex] = useState(0);
   const [completedSteps, setCompletedSteps] = useState(0);
   const [results, setResults] = useState([]);
-  const savedRef = useRef(false);
+  const savedRef = useRef(new Set());
 
   const orderedTypes = useMemo(
     () => TYPE_ORDER.filter(t => selectedTypes.has(t)),
     [selectedTypes],
   );
 
-  // 선택한 서류가 바뀌면 섹션 체크박스를 기본 전체 선택으로 맞춘다
   useEffect(() => {
     setSectionChecks(prev => {
       const next = { ...prev };
@@ -93,44 +88,61 @@ export default function DocumentGenerator() {
     });
   }, [orderedTypes]);
 
-  // 4단계: 서류를 순서대로 생성
+  function settingsFor(type) {
+    const keys = SECTIONS_BY_TYPE[type]
+      .filter(s => sectionChecks[type + '.' + s.key] !== false)
+      .map(s => s.key);
+    return {
+      tone,
+      length,
+      lang,
+      highlight: highlighted,
+      sectionKeys: new Set(keys),
+    };
+  }
+
+  // 4단계: 진행 표시가 끝나는 시점에 실제로 문서를 조립하고 저장한다.
   useEffect(() => {
-    if (step !== 4) return;
+    if (step !== 4 || !job) return;
     if (queueIndex >= orderedTypes.length) return;
-    const steps = genStepsFor(orderedTypes[queueIndex]);
-    const id = setInterval(() => {
+    const type = orderedTypes[queueIndex];
+    const steps = genStepsFor(type);
+    const id = window.setInterval(() => {
       setCompletedSteps(c => {
         if (c + 1 >= steps.length) {
-          clearInterval(id);
-          const type = orderedTypes[queueIndex];
-          setResults(r => [...r, { type, coverage: BASE_COVERAGE[type] || 80 }]);
+          window.clearInterval(id);
+          if (!savedRef.current.has(type)) {
+            savedRef.current.add(type);
+            const composed = composeDocument(job, type, settingsFor(type));
+            const doc = addDocument({
+              jobId: job.id,
+              type,
+              covered: composed.covered,
+              tone,
+              lang,
+              sections: composed.sections,
+              matchPoints: composed.matchPoints,
+              quantRate: composed.quantRate,
+              gaps: composed.gaps,
+            });
+            setResults(r => [...r, { type, docId: doc.id, ...composed }]);
+          }
           setQueueIndex(i => i + 1);
           return 0;
         }
         return c + 1;
       });
-    }, 550);
-    return () => clearInterval(id);
-  }, [step, queueIndex, orderedTypes]);
+    }, 480);
+    return () => window.clearInterval(id);
+  }, [step, queueIndex, orderedTypes, job]);
 
   const allDone = step === 4 && queueIndex >= orderedTypes.length && orderedTypes.length > 0;
-
-  // 생성이 끝나면 실제 서류 레코드를 저장 (중복 저장 방지)
-  useEffect(() => {
-    if (!allDone || savedRef.current || !job) return;
-    savedRef.current = true;
-    const covered = (job.keywords || []).map(k => k.name);
-    results.forEach(r => {
-      const take = Math.max(1, Math.round((covered.length * r.coverage) / 100));
-      addDocument({ jobId: job.id, type: r.type, covered: covered.slice(0, take), tone, lang });
-    });
-  }, [allDone, results, job, tone, lang]);
 
   function startGenerate() {
     setResults([]);
     setQueueIndex(0);
     setCompletedSteps(0);
-    savedRef.current = false;
+    savedRef.current = new Set();
     setStep(4);
   }
 
@@ -146,10 +158,10 @@ export default function DocumentGenerator() {
     });
   }
 
-  function toggleTag(name) {
+  function toggleCareer(id) {
     setHighlighted(prev => {
       const next = new Set(prev);
-      if (next.has(name)) next.delete(name); else next.add(name);
+      if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
   }
@@ -157,6 +169,18 @@ export default function DocumentGenerator() {
   const currentType = orderedTypes[queueIndex];
   const currentSteps = currentType ? genStepsFor(currentType) : [];
   const backTo = `/jobs/${jobId}`;
+
+  // 선택한 경력 안에서 숫자가 빠진 문장들
+  const pickedGaps = useMemo(() => {
+    const ids = highlighted.size ? highlighted : new Set(careers.map(c => c.id));
+    const out = [];
+    careers.filter(c => ids.has(c.id)).forEach(c => {
+      c.bullets.forEach(b => {
+        if (!/\d/.test(b.text)) out.push({ career: c, bullet: b });
+      });
+    });
+    return out;
+  }, [careers, highlighted, step]);
 
   return (
     <div className="app-shell">
@@ -227,9 +251,52 @@ export default function DocumentGenerator() {
             ))}
           </section>
 
-          {/* Step 3 */}
+          {/* Step 3 — 근거 점검 */}
           <section className={`panel${step === 3 ? ' active' : ''}`}>
-            <h2 style={{ fontSize: 20, marginBottom: 20 }}>생성 설정</h2>
+            <h2 style={{ fontSize: 20, marginBottom: 6 }}>어떤 경력을 근거로 쓸까요?</h2>
+            <p style={{ color: 'var(--muted)', fontSize: 14, marginBottom: 20 }}>
+              여기서 고른 경력의 문장만 서류에 들어갑니다. 없는 사실은 만들지 않아요.
+            </p>
+
+            <div className="field-group">
+              <label>강조할 경력 · 프로젝트 <span className="lbl-note">JD 적합도순</span></label>
+              <div className="tag-select">
+                {ranked.map(r => (
+                  <button
+                    key={r.career.id}
+                    className={`tag-opt${highlighted.has(r.career.id) ? ' active' : ''}`}
+                    onClick={() => toggleCareer(r.career.id)}
+                  >
+                    {r.career.project || r.career.role}
+                    {r.hits.length > 0 && <span className="tag-hit">{r.hits.length}개 일치</span>}
+                  </button>
+                ))}
+                {!ranked.length && <span style={{ fontSize: 13, color: 'var(--muted)' }}>프로필에 등록된 경력이 없어요.</span>}
+              </div>
+            </div>
+
+            <div className={`quant-gate ${quantTone.tone}`}>
+              <div className="qg-head">
+                <span className="qg-score">정량 근거 {quant.score}%</span>
+                <span className="qg-label">{quantTone.text}</span>
+              </div>
+              <p className="qg-desc">
+                고른 경력의 성과 문장 중 <strong>{pickedGaps.length}개</strong>에 숫자가 없어요.
+                숫자 없는 문장은 그대로 들어가고, 서류에 <code>[수치 필요]</code>로 표시됩니다.
+              </p>
+              {pickedGaps.length > 0 && (
+                <ul className="qg-list">
+                  {pickedGaps.slice(0, 3).map(g => (
+                    <li key={g.bullet.id}>{g.bullet.text}</li>
+                  ))}
+                  {pickedGaps.length > 3 && <li className="qg-more">외 {pickedGaps.length - 3}개</li>}
+                </ul>
+              )}
+              <Link className="btn btn-secondary qg-cta" to="/profile">
+                {pickedGaps.length > 0 ? '프로필에서 숫자 채우고 오기' : '프로필 확인하기'}
+              </Link>
+            </div>
+
             <div className="field-group">
               <label>톤</label>
               <div className="chip-row">
@@ -249,18 +316,10 @@ export default function DocumentGenerator() {
             <div className="field-group">
               <label>언어</label>
               <div className="chip-row">
-                {['한국어', '영어'].map(v => (
-                  <button key={v} className={`chip-opt${lang === v ? ' active' : ''}`} onClick={() => setLang(v)}>{v}</button>
-                ))}
+                <button className={`chip-opt${lang === '한국어' ? ' active' : ''}`} onClick={() => setLang('한국어')}>한국어</button>
+                <button className="chip-opt" disabled title="AI 연결 후 지원">영어</button>
               </div>
-            </div>
-            <div className="field-group">
-              <label>강조할 프로젝트 / 경험 (내 프로필에서 선택)</label>
-              <div className="tag-select">
-                {['커머스 결제 시스템 리팩토링', 'MSA 전환 프로젝트', '사내 API 게이트웨이 구축', '신입 온보딩 자동화 툴'].map(name => (
-                  <button key={name} className={`tag-opt${highlighted.has(name) ? ' active' : ''}`} onClick={() => toggleTag(name)}>{name}</button>
-                ))}
-              </div>
+              <p className="lbl-note" style={{ marginTop: 8 }}>영어 변환은 번역이 필요해서 AI 연결 후에 열려요.</p>
             </div>
           </section>
 
@@ -298,24 +357,37 @@ export default function DocumentGenerator() {
                 {results.map(r => (
                   <div className="result-block" key={r.type}>
                     <div className="result-card">
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4, gap: 10 }}>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-2)' }}>{DOC_LABEL[r.type]} · 키워드 반영률</span>
-                        <span className="meta" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg)' }}>{r.coverage}%</span>
+                      <div className="rc-title">{DOC_LABEL[r.type]}</div>
+                      <div className="rc-metric">
+                        <div className="rc-metric-head"><span>JD 키워드 반영률</span><span className="num">{r.coverage}%</span></div>
+                        <div className="coverage-bar"><div className="coverage-bar-fill" style={{ width: r.coverage + '%' }}></div></div>
                       </div>
-                      <div className="coverage-bar"><div className="coverage-bar-fill" style={{ width: r.coverage + '%' }}></div></div>
+                      <div className="rc-metric">
+                        <div className="rc-metric-head"><span>정량 근거 비율</span><span className="num">{r.quantRate}%</span></div>
+                        <div className="coverage-bar"><div className="coverage-bar-fill quant" style={{ width: r.quantRate + '%' }}></div></div>
+                      </div>
+                      {r.gaps > 0 && (
+                        <p className="rc-gap">숫자가 없어 <code>[수치 필요]</code>로 남은 자리가 {r.gaps}곳 있어요.</p>
+                      )}
                     </div>
-                    {(MATCH_POINTS[r.type] || []).map(mp => (
+
+                    {r.matchPoints.length ? r.matchPoints.map(mp => (
                       <div className="match-point" key={mp.text}>
                         <div className="mp-text">&ldquo;{mp.text}&rdquo;</div>
-                        <div className="mp-source"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>근거 · {mp.source}</div>
+                        <div className="mp-foot">
+                          <span className="mp-source"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>근거 · {mp.source}</span>
+                          {mp.metric && <span className="mp-metric">{mp.metric}</span>}
+                        </div>
                       </div>
-                    ))}
+                    )) : (
+                      <p className="rc-gap">아직 수치로 정리된 성과가 없어서 근거를 붙이지 못했어요.</p>
+                    )}
                   </div>
                 ))}
 
                 <div className="wizard-nav">
                   <Link className="btn btn-secondary" to={backTo}>나중에 이어하기</Link>
-                  <Link className="btn btn-primary" to={`/editor?job=${jobId}&type=${results[0] ? results[0].type : 'resume'}&new=1`}>편집기에서 검토하기</Link>
+                  <Link className="btn btn-primary" to={`/editor?doc=${results[0] ? results[0].docId : ''}&new=1`}>편집기에서 검토하기</Link>
                 </div>
               </div>
             )}
