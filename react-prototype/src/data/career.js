@@ -11,6 +11,7 @@
 
 const CAREER_KEY = 'nansa.careers.v1';
 const ACH_KEY = 'nansa.achievements.v1';
+const BASICS_KEY = 'nansa.basics.v1';
 
 /* ---------------- 시드 데이터 ---------------- */
 
@@ -88,6 +89,32 @@ function write(key, value) {
 
 function uid(prefix) {
   return prefix + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+}
+
+const SEED_BASICS = {
+  name: '이승현',
+  phone: '010-1234-5678',
+  email: 'austin9796@gmail.com',
+  link: 'linkedin.com/in/seunghyun',
+};
+
+/** 기본 정보. 문서 조립기가 머리말에 그대로 쓴다. */
+export function getBasics() {
+  try {
+    const raw = window.localStorage.getItem(BASICS_KEY);
+    if (raw === null) {
+      window.localStorage.setItem(BASICS_KEY, JSON.stringify(SEED_BASICS));
+      return { ...SEED_BASICS };
+    }
+    return { ...SEED_BASICS, ...JSON.parse(raw) };
+  } catch (e) {
+    return { ...SEED_BASICS };
+  }
+}
+
+export function saveBasics(next) {
+  write(BASICS_KEY, next);
+  return next;
 }
 
 export function getCareers() {
