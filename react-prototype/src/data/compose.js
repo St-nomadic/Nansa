@@ -99,6 +99,17 @@ export function buildContext(job, settings) {
   };
 }
 
+/* ---------------- 한글 조사 ---------------- */
+
+/** 앞 글자의 받침에 따라 조사를 고른다. (영문·숫자로 끝나면 받침 없음으로 취급) */
+export function josa(word, withFinal, withoutFinal) {
+  const s = String(word || '');
+  if (!s) return withoutFinal;
+  const code = s.charCodeAt(s.length - 1);
+  if (code < 0xac00 || code > 0xd7a3) return withoutFinal;
+  return (code - 0xac00) % 28 !== 0 ? withFinal : withoutFinal;
+}
+
 /* ---------------- 톤 ---------------- */
 
 const POLISH_MAP = [
@@ -155,7 +166,10 @@ function composeResume(job, ctx, settings) {
       ? `${job.title} 직무 기준 ${ctx.years}년차입니다.`
       : `${job.title} 직무에 지원합니다.`
   );
-  if (keyTerms.length) summaryParts.push(`${keyTerms.join(' · ')}을 중심으로 일해 왔습니다.`);
+  if (keyTerms.length) {
+    const tail = keyTerms[keyTerms.length - 1];
+    summaryParts.push(`${keyTerms.join(' · ')}${josa(tail, '을', '를')} 중심으로 일해 왔습니다.`);
+  }
   if (top.length) summaryParts.push(`대표 성과는 ${top.map(formatAchievement).join(', ')}입니다.`);
 
   const sections = [
@@ -336,11 +350,20 @@ export function composeDocument(job, type, settings) {
   const withMetric = bodyBlocks.filter(b => b.metric).length;
   const needs = bodyBlocks.filter(b => b.needsMetric);
 
-  const matchPoints = ctx.achievements.slice(0, 3).map(a => ({
-    text: a.bullet.text,
-    source: `${a.career.company} · ${a.career.project || a.career.role}`,
-    metric: formatAchievement(a),
-  }));
+  const byBullet = new Map();
+  ctx.achievements.forEach(a => {
+    const key = a.bullet.id;
+    if (byBullet.has(key)) {
+      byBullet.get(key).metric += ' · ' + formatAchievement(a);
+      return;
+    }
+    byBullet.set(key, {
+      text: a.bullet.text,
+      source: `${a.career.company} · ${a.career.project || a.career.role}`,
+      metric: formatAchievement(a),
+    });
+  });
+  const matchPoints = [...byBullet.values()].slice(0, 3);
 
   return {
     sections,
@@ -385,4 +408,3 @@ export function expandText(text, metrics) {
   const base = text.replace(/\s*$/, '');
   return `${base} 구체적으로는 ${already.join(', ')}의 성과로 이어졌습니다.`;
 }
-
