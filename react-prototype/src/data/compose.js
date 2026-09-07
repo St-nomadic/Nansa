@@ -246,7 +246,8 @@ function composeCoverLetter(job, ctx, settings) {
         if (!match) {
           return block(`"${req}" 요건을 뒷받침할 경험이 프로필에 없습니다. [근거 필요]`, { needsMetric: true });
         }
-        return block(applyTone(`"${req}" 요건과 관련해, ${match.bullet.text}`, tone), {
+        // 사용자의 문장은 손대지 않고 그대로 인용한다. 억지로 어미를 붙이면 문법이 깨진다.
+        return block(applyTone(`"${req}" 요건과 관련해서는 이런 경험이 있습니다. ${match.bullet.text}`, tone), {
           needsMetric: !match.bullet.quantified,
           source: `${match.career.company} · ${match.career.project || match.career.role}`,
           metric: (match.bullet.achievements || []).map(formatAchievement).join(' · '),
@@ -272,7 +273,7 @@ function composeCoverLetter(job, ctx, settings) {
       blocks: [
         block(applyTone(
           `입사 후 "${(analysis.duty || [])[0] || job.title}"에 먼저 기여하겠습니다.` +
-          (top.length ? ` 이전에 ${formatAchievement(top[0])}를 만든 방식을 그대로 적용하겠습니다.` : ''),
+          (top.length ? ` 이전에는 ${formatAchievement(top[0])}의 성과를 냈고, 같은 방식으로 접근하겠습니다.` : ''),
           tone,
         )),
       ],
