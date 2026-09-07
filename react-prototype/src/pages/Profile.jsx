@@ -13,12 +13,14 @@ import {
   formatAchievement,
   followUpQuestions,
   getAchievements,
+  getBasics,
   getCareers,
   isQuantified,
   parseAnswer,
   quantScore,
   removeBullet,
   removeCareer,
+  saveBasics,
   scoreLabel,
   suggestBulletText,
   updateBullet,
@@ -35,6 +37,7 @@ export default function Profile() {
   const [formError, setFormError] = useState('');
   const [interview, setInterview] = useState(null); // { careerId, bulletId, qIndex, step, answer, parsed, draft }
   const [newBullet, setNewBullet] = useState({});
+  const [basics, setBasics] = useState(() => getBasics());
   const answerRef = useRef(null);
 
   const careers = useMemo(() => getCareers(), [tick]);
@@ -44,6 +47,13 @@ export default function Profile() {
 
   function refresh() {
     setTick(t => t + 1);
+  }
+
+  // 기본 정보는 서류 머리말에 그대로 들어가므로 즉시 저장한다.
+  function updateBasic(key, value) {
+    const next = { ...basics, [key]: value };
+    setBasics(next);
+    saveBasics(next);
   }
 
   /* ---------------- 성과 인터뷰 ---------------- */
@@ -198,11 +208,12 @@ export default function Profile() {
           <section className="card">
             <div className="card-head"><h2>기본 정보</h2></div>
             <div className="field-row">
-              <div className="field"><label>이름</label><input className="input" defaultValue="이승현" /></div>
-              <div className="field"><label>연락처</label><input className="input" defaultValue="010-1234-5678" /></div>
-              <div className="field"><label>이메일</label><input className="input" defaultValue="austin9796@gmail.com" /></div>
-              <div className="field"><label>링크드인 / 포트폴리오 URL</label><input className="input" defaultValue="linkedin.com/in/seunghyun" /></div>
+              <div className="field"><label>이름</label><input className="input" value={basics.name} onChange={e => updateBasic('name', e.target.value)} /></div>
+              <div className="field"><label>연락처</label><input className="input" value={basics.phone} onChange={e => updateBasic('phone', e.target.value)} /></div>
+              <div className="field"><label>이메일</label><input className="input" value={basics.email} onChange={e => updateBasic('email', e.target.value)} /></div>
+              <div className="field"><label>링크드인 / 포트폴리오 URL</label><input className="input" value={basics.link} onChange={e => updateBasic('link', e.target.value)} /></div>
             </div>
+            <p className="field-hint">여기 입력한 값이 생성되는 서류의 머리말에 그대로 들어가요.</p>
           </section>
 
           <section className="card">
