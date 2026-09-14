@@ -1,11 +1,10 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import './Landing.css';
-import { startSession } from '../data/session.js';
 
 export default function Landing() {
   const navigate = useNavigate();
   const location = useLocation();
-  function start() { startSession(); navigate('/dashboard'); }
+  function start() { navigate('/login'); }
 
   function scrollToHow() {
     const el = document.getElementById('how');

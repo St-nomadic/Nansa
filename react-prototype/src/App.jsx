@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { isSessionActive, subscribeSession } from './data/session.js';
 
 import Landing from './pages/Landing.jsx';
+import Auth from './pages/Auth.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import JobPostings from './pages/JobPostings.jsx';
 import JobDetail from './pages/JobDetail.jsx';
@@ -16,13 +17,15 @@ import NotFound from './pages/NotFound.jsx';
 
 function SessionGate() {
   const active = useSyncExternalStore(subscribeSession, isSessionActive);
-  return active ? <Outlet /> : <Navigate to="/" replace />;
+  return active ? <Outlet /> : <Navigate to="/login" replace />;
 }
 
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
+      <Route path="/login" element={<Auth key="login" />} />
+      <Route path="/signup" element={<Auth key="signup" signup />} />
       <Route element={<SessionGate />}>
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/jobs" element={<JobPostings />} />

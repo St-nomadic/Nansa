@@ -7,7 +7,7 @@ test('demo logout persists, preserves user data, and notifies subscribers', () =
  const target = new EventTarget();
  globalThis.window = { localStorage: {getItem: k=>values.get(k) ?? null, setItem:(k,v)=>values.set(k,v)}, addEventListener: target.addEventListener.bind(target), removeEventListener:target.removeEventListener.bind(target), dispatchEvent:target.dispatchEvent.bind(target)};
  let changes=0;const unsubscribe=subscribeSession(()=>changes++);
- assert.equal(isSessionActive(),true);
+ assert.equal(isSessionActive(),false);
  endSession();assert.equal(isSessionActive(),false);
  assert.equal(values.get('nansa.careers.v1'),'saved career');
  startSession();assert.equal(isSessionActive(),true);assert.equal(changes,2);
