@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { authenticate } from '../data/auth.js';
+import { authenticate, getAuthSession, watchAuth } from '../data/auth.js';
 import './Auth.css';
 
 export default function Auth({ signup = false }) {
@@ -12,6 +12,19 @@ export default function Auth({ signup = false }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  useEffect(() => {
+    let mounted = true;
+    const redirectIfAuthenticated = session => {
+      if (mounted && session) navigate('/dashboard', { replace: true });
+    };
+    getAuthSession().then(redirectIfAuthenticated).catch(() => {});
+    const stopWatching = watchAuth(redirectIfAuthenticated);
+    return () => {
+      mounted = false;
+      stopWatching();
+    };
+  }, [navigate]);
+
   async function submit(event) {
     event.preventDefault();
     if (busy) return;
