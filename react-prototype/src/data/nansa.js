@@ -1,3 +1,5 @@
+import { queueCloudSync } from './cloudData.js';
+
 // 프로토타입 목업 데이터의 단일 출처(single source of truth).
 // 이전에는 각 페이지 JSX에 값이 하드코딩돼 있어 화면마다 숫자가 달랐습니다.
 // 화면에 보이는 카운트/비율은 모두 이 파일의 배열에서 파생됩니다.
@@ -182,6 +184,7 @@ function read(key) {
 function write(key, value) {
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
+    queueCloudSync();
   } catch (e) {
     /* 저장 실패해도 화면은 동작해야 하므로 무시 */
   }
@@ -400,4 +403,3 @@ export function analyzeJdText(text) {
     .map((name, i) => ({ name, weight: i < 2 ? 3 : i < 5 ? 2 : 1 }));
   return { analysis: buckets, keywords };
 }
-

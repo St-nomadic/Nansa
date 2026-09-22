@@ -1,3 +1,5 @@
+import { queueCloudSync } from './cloudData.js';
+
 /**
  * 경력 · 정량 성과(achievements) 데이터 모델
  *
@@ -82,6 +84,7 @@ function read(key, seed) {
 function write(key, value) {
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
+    queueCloudSync();
   } catch (e) {
     /* 저장 실패해도 화면은 동작해야 한다 */
   }

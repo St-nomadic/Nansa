@@ -1,4 +1,5 @@
 import { startSession } from './session.js';
+import { syncAfterAuth } from './cloudData.js';
 const ACCOUNT_KEY = 'nansa.demo-account.v1';
 let clientPromise;
 async function client() {
@@ -28,6 +29,7 @@ export async function authenticate({ signup, name, email, password }) {
       throw new Error('이메일 또는 비밀번호를 확인해 주세요.');
     }
     startSession();
+    await syncAfterAuth();
     return { session: { user: { email: account.email } } };
   }
   const supabase = await client();
@@ -39,7 +41,10 @@ export async function authenticate({ signup, name, email, password }) {
     if (error.code === 'email_not_confirmed') throw new Error('이메일 인증을 완료한 뒤 로그인해 주세요.');
     throw new Error(signup ? '회원가입하지 못했어요. 입력 내용을 확인하고 다시 시도해 주세요.' : '로그인하지 못했어요. 잠시 후 다시 시도해 주세요.');
   }
-  if (data.session) startSession();
+  if (data.session) {
+    startSession();
+    await syncAfterAuth();
+  }
   return data;
 }
 export async function signOut() {
