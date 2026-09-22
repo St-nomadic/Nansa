@@ -1,6 +1,6 @@
 .page-auth { min-height: 100vh; background: var(--surface-warm); padding: 0 24px 48px; }
 .page-auth header { max-width: 1024px; margin: 0 auto; padding: 22px 0; display: flex; justify-content: space-between; align-items: center; }
-.page-auth .auth-brand { display: flex; align-items: center; gap: 8px; font-size: 19px; font-weight: 600; }
+.page-auth .auth-brand { display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-size: 19px; line-height: 1.4; font-weight: 600; letter-spacing: -0.01em; }
 .page-auth .auth-brand span { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
 .page-auth .auth-home { font-size: 13px; color: var(--muted); }
 .page-auth .auth-card { max-width: 420px; margin: 52px auto 0; padding: 32px; background: var(--bg); border: 1px solid var(--border-soft); border-radius: var(--radius-lg); }

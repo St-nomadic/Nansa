@@ -34,7 +34,7 @@
 /* 모바일: 상단 CTA가 눌려 2줄로 깨지지 않도록 로고/CTA를 auto 폭으로 고정 */
 @media (max-width: 640px) {
   .page-landing .topnav-inner { grid-template-columns: auto 1fr auto; gap: var(--gap-sm); padding-block: 10px; }
-  .page-landing .topnav .logo { font-size: 17px; }
+  .page-landing .topnav .logo { font-size: 19px; }
   .page-landing .topnav nav { gap: var(--gap-md); justify-self: center; }
   .page-landing .topnav nav a { font-size: 13px; }
   .page-landing .topnav-inner > .btn { padding: 8px 14px; font-size: 14px; }
