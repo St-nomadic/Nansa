@@ -1,6 +1,6 @@
-import { useSyncExternalStore } from 'react';
+import { useEffect, useState } from 'react';
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { isSessionActive, subscribeSession } from './data/session.js';
+import { getAuthSession, watchAuth } from './data/auth.js';
 
 import Landing from './pages/Landing.jsx';
 import Auth from './pages/Auth.jsx';
@@ -16,8 +16,15 @@ import MyPage from './pages/MyPage.jsx';
 import NotFound from './pages/NotFound.jsx';
 
 function SessionGate() {
-  const active = useSyncExternalStore(subscribeSession, isSessionActive);
-  return active ? <Outlet /> : <Navigate to="/login" replace />;
+  const [status, setStatus] = useState('checking');
+  useEffect(() => {
+    let mounted = true;
+    getAuthSession().then(session => { if (mounted) setStatus(session ? 'active' : 'signed-out'); });
+    const stop = watchAuth(session => setStatus(session ? 'active' : 'signed-out'));
+    return () => { mounted = false; stop(); };
+  }, []);
+  if (status === 'checking') return null;
+  return status === 'active' ? <Outlet /> : <Navigate to="/login" replace />;
 }
 
 export default function App() {

@@ -69,3 +69,8 @@ export function queueCloudSync() {
     if (userResult?.user) await persistSnapshot(supabase, userResult.user.id, snapshot()).catch(() => {});
   }, 250);
 }
+
+export function clearLocalUserData() {
+  if (typeof window === 'undefined') return;
+  Object.values(KEYS).forEach(key => window.localStorage.removeItem(key));
+}

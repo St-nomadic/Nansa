@@ -1,6 +1,5 @@
 import { startSession } from './session.js';
-import { syncAfterAuth } from './cloudData.js';
-const ACCOUNT_KEY = 'nansa.demo-account.v1';
+import { clearLocalUserData, syncAfterAuth } from './cloudData.js';
 let clientPromise;
 async function client() {
   if (!clientPromise) clientPromise = (async () => {
@@ -13,25 +12,6 @@ async function client() {
   return clientPromise;
 }
 export async function authenticate({ signup, name, email, password }) {
-  // When no hosted auth provider is configured, keep the prototype usable with
-  // a browser-local account. The Supabase branch remains available for a real deployment.
-  if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) {
-    const normalizedEmail = email.trim().toLowerCase();
-    let account = null;
-    try { account = JSON.parse(window.localStorage.getItem(ACCOUNT_KEY) || 'null'); } catch { account = null; }
-    if (signup) {
-      if (account?.email === normalizedEmail) throw new Error('이미 가입한 이메일이에요. 로그인해 주세요.');
-      window.localStorage.setItem(ACCOUNT_KEY, JSON.stringify({ name: name.trim(), email: normalizedEmail, password }));
-      startSession();
-      return { session: { user: { email: normalizedEmail } } };
-    }
-    if (!account || account.email !== normalizedEmail || account.password !== password) {
-      throw new Error('이메일 또는 비밀번호를 확인해 주세요.');
-    }
-    startSession();
-    await syncAfterAuth();
-    return { session: { user: { email: account.email } } };
-  }
   const supabase = await client();
   const { data, error } = signup
     ? await supabase.auth.signUp({ email, password, options: { data: { name }, emailRedirectTo: `${window.location.origin}/login` } })
@@ -48,5 +28,25 @@ export async function authenticate({ signup, name, email, password }) {
   return data;
 }
 export async function signOut() {
-  if (import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) { const supabase = await client(); const { error } = await supabase.auth.signOut({ scope: 'local' }); if (error) throw error; }
+  const supabase = await client();
+  if (supabase) { const { error } = await supabase.auth.signOut({ scope: 'local' }); if (error) throw error; }
+  clearLocalUserData();
+}
+
+export async function getAuthSession() {
+  const supabase = await client();
+  if (!supabase) return null;
+  const { data } = await supabase.auth.getSession();
+  return data.session;
+}
+
+export function watchAuth(callback) {
+  let disposed = false;
+  let unsubscribe = () => {};
+  client().then(supabase => {
+    if (!supabase || disposed) return;
+    const result = supabase.auth.onAuthStateChange((_event, session) => callback(session));
+    unsubscribe = () => result.data.subscription.unsubscribe();
+  });
+  return () => { disposed = true; unsubscribe(); };
 }
